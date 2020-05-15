@@ -10,6 +10,9 @@ jobs:
     container: rocker/r-rmd
     
     steps:
+    - name: install git
+      run: |
+        apt-get update && apt-get install git
                     
     - name: checkout 
       uses: actions/checkout@master
