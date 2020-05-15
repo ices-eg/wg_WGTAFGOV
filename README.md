@@ -7,16 +7,16 @@ http://www.ices.dk/community/groups/Pages/WGTAFGOV.aspx - no page yet!
 This repository hosts code and documents associated with the TAF governance working group.
 
 It contains two documents in development
-* [TAF Manifesto](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_manifesto.html): _The Transparent Assessment Framework Manifesto_
+* [TAF Manifesto](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_manifesto.html): _The Transparent Assessment Framework Manifesto_ ![BuildManifesto](https://github.com/ices-eg/WGTAFGOV/workflows/BuildManifesto/badge.svg)
 * [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_user_handbook.html): _The Transparent Assessment Framework User Handbook_
 
 This repository also contains a [help file](CONTRIBUTING.md) on how to contribute.
 
 ## Overview
 
-Improving the Transparent Assessment Framework (TAF) - a tool for . WGTAF is devoted to overseeing and advising on the improvements needed to make TAF​ a fully functional tool for recording, documenting and running stock assessments, data raising procedures and analyses used to support catch advice for commercial fish stocks. 
+Improving the Transparent Assessment Framework (TAF) - a tool for . WGTAF is devoted to overseeing and advising on the improvements needed to make TAF​ a fully functional tool for recording, documenting and running stock assessments, data raising procedures and analyses used to support catch advice for commercial fish stocks.
 
-TAF is a platform for quality assurance of . The focus of the group will be to prioritize recommendations, issues, and requests for improvements from end users. Feedback from the users will be compiled by WGTAF and appropriate actions with assigned responsibilities will be listed and prioritised. 
+TAF is a platform for quality assurance of . The focus of the group will be to prioritize recommendations, issues, and requests for improvements from end users. Feedback from the users will be compiled by WGTAF and appropriate actions with assigned responsibilities will be listed and prioritised.
 
 User manuals will be updated by WGTAF, and the group will also identify and facilitate training and outreach requirements.
 
