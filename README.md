@@ -10,7 +10,7 @@ It contains two documents in development
 * [TAF Manifesto](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_manifesto.html): _The Transparent Assessment Framework Manifesto_
 * [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_user_handbook.html): _The Transparent Assessment Framework User Handbook_
 
-This repository also contains a directory of [help files](How_to_contribute) on how to contribute.
+This repository also contains a [help file](CONTRIBUTING.md) on how to contribute.
 
 ## Overview
 
