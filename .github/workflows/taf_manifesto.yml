@@ -26,12 +26,22 @@ jobs:
         mkdir -p formatted_docs
         mv TAF_Manifesto/taf_manifesto.html formatted_docs/taf_manifesto.html
         
+    - name: build handbook
+      run: R -e rmarkdown::render"('user_handbook.Rmd', output_file='user_handbook.html')"
+      working-directory: user_handbooks
+    
+    - name: move user_handbook.html file to formatted_docs folder
+      run: |
+        mkdir -p formatted_docs
+        mv user_handbooks/user_handbook.html formatted_docs/user_handbook.html        
+        
     - name: Git stuff
       run: |
         git config --local user.email "github@ices.dk"
         git config --local user.name "ices-github-bot"
         git status
         git add formatted_docs/taf_manifesto.html
+        git add formatted_docs/user_handbook.html
         git commit --allow-empty -m "Push triggered Rmarkdown build"
         
     - name: Push changes
