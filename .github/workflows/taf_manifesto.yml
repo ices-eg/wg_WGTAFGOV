@@ -1,0 +1,37 @@
+name: BuildManifesto
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: rocker/r-rmd
+    
+    steps:
+                    
+    - name: checkout 
+      uses: actions/checkout@master
+
+    - name: build manifesto
+      run: R -e rmarkdown::render"('taf_manifesto.Rmd', output_file='taf_manifesto.html')"
+      working-directory: taf_manifesto
+    
+    - name: move taf_manifesto.html file to formatted_docs folder
+      run: |
+        mkdir -p formatted_docs
+        mv taf_manifesto/taf_manifesto.html formatted_docs/taf_manifesto.html
+        
+    - name: Git stuff
+      run: |
+        git config --local user.email "github@ices.dk"
+        git config --local user.name "ices-github-bot"
+        git status
+        git add formatted_docs/taf_manifesto.html
+        git commit --allow-empty -m "Push triggered Rmarkdown build"
+        
+    - name: Push changes
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
