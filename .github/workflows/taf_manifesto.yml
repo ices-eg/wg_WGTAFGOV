@@ -12,7 +12,7 @@ jobs:
     steps:
     - name: install git
       run: |
-        apt-get update && apt-get install git
+        apt-get update && apt-get -y install git
                     
     - name: checkout 
       uses: actions/checkout@master
