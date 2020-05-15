@@ -20,6 +20,7 @@ jobs:
     
     - name: move taf_manifesto.html file to formatted_docs folder
       run: |
+        rm taf_manifesto.md
         mkdir -p formatted_docs
         mv TAF_Manifesto/taf_manifesto.html formatted_docs/taf_manifesto.html
         
