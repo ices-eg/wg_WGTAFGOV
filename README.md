@@ -8,7 +8,7 @@ This repository hosts code and documents associated with the TAF governance work
 
 It contains two documents in development
 * [TAF Manifesto](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_manifesto.html): _The Transparent Assessment Framework Manifesto_ ![BuildManifesto](https://github.com/ices-eg/WGTAFGOV/workflows/BuildManifesto/badge.svg)
-* [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/taf_user_handbook.html): _The Transparent Assessment Framework User Handbook_
+* [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/WGTAFGOV/blob/master/formatted_docs/user_handbook.html): _The Transparent Assessment Framework User Handbook_
 
 This repository also contains a [help file](CONTRIBUTING.md) on how to contribute.
 
