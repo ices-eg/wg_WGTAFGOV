@@ -17,23 +17,14 @@ For users who only are intested in browsing code and results, please go direcly 
 
 ### General description and Manifesto (#1)
 
-### The TAF Server (web app)
+### Web application
 
-### icesTAF (R package)
-
-### TAF Repositories on GitHub
-
-----
-
-## What is TAF
-
-### General description and Manifesto (#1)
-
-### The TAF Server (web app)
-
-### icesTAF (R package)
+* loggin in
+* linking to GitHub
 
 ### TAF Repositories on GitHub
+
+### icesTAF (R package)
 
 ----
 
@@ -59,9 +50,13 @@ For users who only are intested in browsing code and results, please go direcly 
 
 ## Repository structure (link to YouTube tutorial)
 
-### The boot procedure, initializing software and data
+### The bootstrap (-> boot) procedure: software
+### The bootstrap (-> boot) procedure: data
 
-### Scripts: data, model, output, report
+### Scripts: data
+### Scripts: model (-> method)
+### Scripts: output
+### Scripts: report
 
 ----
 
@@ -85,3 +80,12 @@ For users who only are intested in browsing code and results, please go direcly 
 
 ### RDBES estimations, in the future
 
+----
+
+## Contacts
+
+ * taf@ices.dk
+
+## Change log and version history of document
+
+date published, change and who prepared it
