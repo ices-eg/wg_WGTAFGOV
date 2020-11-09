@@ -11,7 +11,7 @@ The aim of the Transparent Assessment Framework (TAF) is to assure quality, impr
 ## Aim / mission statement
 
 ### Assuring quality
-Assuring quality is a key element of the ICES Advisory Plan (ICES, 2019) and TAF is an essential tool in the overall quality assurance framework. Various quality control check points will be included and documented within TAF.
+Assuring quality is a key element of the ICES Advisory Plan (ICES, 2019)[^advisory-plan] and TAF is an essential tool in the overall quality assurance framework. Various quality control check points will be included and documented within TAF.
 
 ### Efficiency
 ICES experts require a user-friendly framework to archive data, methods, and results used in assessments and advisory products. For recurrent assessments and advice, TAF will ensure that the outputs can be replicated and also be used in future analyses with minimal changes. This will also improve ICES institutional memory as new personnel can more easily understand and pick up the work from earlier contributors.
@@ -19,17 +19,17 @@ ICES experts require a user-friendly framework to archive data, methods, and res
 ### Transparency
 ICES assessments are carried out using various disparate data sources. TAF will ensure transparent input data processing and reproducible assessment methods, while also automating and documenting the outputs which form the evidence base for advisory products. The aim should be that data are available at the highest possible resolution, taking into account confidentiality constraints on these data.
 
-TAF uses GitHub to share code and data (if allowed by the relevant policy, see below) using repositories. GitHub is a website which uses the Git version control system and allows people to easily share code and data., and all TAF GitHub repositories are found at the ICES TAF GitHub site. The development of TAF is steered through the Working Group on the Transparent Assessment Framework Governance (WGTAFGOV).
+TAF uses GitHub to share code and data (if allowed by the relevant policy, see below) using repositories. GitHub is a website which uses the Git version control system and allows people to easily share code and data., and all TAF GitHub repositories are found at the ICES TAF GitHub site[^ices-taf]. The development of TAF is steered through the Working Group on the Transparent Assessment Framework Governance (WGTAFGOV)[^wg_WGTAFGOV].
 
 ## Historical background
 
-Based on recommendations from the External Review of the Advisory Services (ICES, 2012), and further elaborated by ACOM, Bureau and the Secretariat, a proposal for investment in resources was approved by ICES Council (2015) noting:
+Based on recommendations from the External Review of the Advisory Services (ICES, 2012)[^external-advisory-review], and further elaborated by ACOM, Bureau and the Secretariat, a proposal for investment in resources was approved by ICES Council (2015) noting:
 
-  "The (advisory) system should be optimized by freeing them (assessment scientists) from some of their work (shifting update assessment work to the Secretariat). ICES needs to make a more efficient system and the proposed changes are a good investment in the process."
+> "The (advisory) system should be optimized by freeing them (assessment scientists) from some of their work (shifting update assessment work to the Secretariat). ICES needs to make a more efficient system and the proposed changes are a good investment in the process."
 
 In 2016 an ‘update assessment’ project was launched, resourced by two full-time professional officers and managed jointly by the Head of Advisory support, and the Head of Data and Information. While the brief was to focus on the reproducibility of single stock (recurrent) assessments, data strategy was also considered an integral part of the development. This evolved the initial idea into what was renamed the Transparent Assessment Framework, with the aim of making:
 
-  "an online open resource of ICES stock assessments for each assessment year. All data input and output is fully traceable and versioned"
+> "an online open resource of ICES stock assessments for each assessment year. All data input and output is fully traceable and versioned"
 
 TAF has made good progress since its initiation in 2016; it has now reached the adoption stage. In addition to its initial focus on stock assessment, TAF has provided a framework for:
 
@@ -49,13 +49,26 @@ Of the 260 stocks for which ICES provides advice, the target is to have 200 stoc
 
 ### Definitions
 
-* TAF project - the basic unit with the data and software gathering step (boot) and the analysis scripts (data, model, output, etc.), each project is stored in a single github repository.
-* TAF (project) Type - The type of project, typically driven by its purpose, such as, stock assessment, index calculation.
-* (TAF) pipeline - a collection of connected TAF projects allowing data to flow from databases through several processes and to a final product, such as an advice narrative or official data product.
-* Data interfaces - a bit like a contract, this is the individual file formats a project promises to produce (e.g. SAG stock assessment summaries, or a survey index).  A project can have more than one interface, an example is if a project contains code to run both a stock assessment and the forecasts to produce catch advice.
-* TAF Server - where projects are stored and run.
-* TAF web app - web application to browse and access code and data products.  Public access is available for projects that have been made public (when an associated advice is published), and access through a login, given appropriate authorization, is required to access projects that are not public and restricted datasets within a project.
-* TAF GitHub site - the github.com/ices-taf where the code and some input data of TAF projects are stored. The GitHub repository is how users contribute code and user uploaded datasets to TAF.
+TAF project
+: the basic unit with the data and software gathering step (boot) and the analysis scripts (data, model, output, etc.), each project is stored in a single github repository.
+
+TAF (project) Type
+: The type of project, typically driven by its purpose, such as, stock assessment, index calculation.
+
+(TAF) pipeline
+: a collection of connected TAF projects allowing data to flow from databases through several processes and to a final product, such as an advice narrative or official data product.
+
+Data interfaces
+: a bit like a contract, this is the individual file formats a project promises to produce (e.g. SAG stock assessment summaries, or a survey index).  A project can have more than one interface, an example is if a project contains code to run both a stock assessment and the forecasts to produce catch advice.
+
+TAF Server
+: where projects are stored and run.
+
+TAF web app
+: web application to browse and access code and data products.  Public access is available for projects that have been made public (when an associated advice is published), and access through a login, given appropriate authorization, is required to access projects that are not public and restricted datasets within a project.
+
+TAF GitHub site
+: the github.com/ices-taf where the code and some input data of TAF projects are stored. The GitHub repository is how users contribute code and user uploaded datasets to TAF.
 
 ### Organisation of TAF projects
 
@@ -67,7 +80,7 @@ There is a need for flexibility when setting up a TAF project, because there are
 ![](images/manifesto_1.png)
 Figure 1. _Example of a data processing pipeline using different TAF projects as building blocks. Note that different configurations of TAF projects may be set up, e.g. to accommodate management strategy evaluations and catch at age estimates directly from the RDBES, avoiding the need for separate TAF projects for each nation._
 
-The type of TAF project determines how much flexibility is allowed, and a list of standard types is developing . Standard output options or data interfaces, including files and metadata field names should be  developed for each main TAF type, starting with the most common ones.
+The type of TAF project determines how much flexibility is allowed, and a list of standard types is developing[^project-types]. Standard output options or data interfaces, including files and metadata field names should be  developed for each main TAF type, starting with the most common ones.
 
 Automated checkers are useful to measure the progress of ongoing TAF projects, for quality control, and subsequent analysis of TAF results. These check the existence of folders and files, metadata, syntax, data values, keywords in the scripts, and allow a grand overview of the status of all TAF projects.
 
@@ -77,7 +90,7 @@ A test case will be developed to get experience in building a pipeline of TAF pr
 
 ### Licensing and sensitive data
 
-All code within TAF will be publicly shared on the TAF web application and the TAF GitHub site under open licenses. The licence will adhere to the recommendations from DIG, and should follow the ICES data policy.
+All code within TAF will be publicly shared on the TAF web application and the TAF GitHub site under open licenses. The licence will adhere to the recommendations from DIG, and should follow the ICES data policy[^ices-data-policy].
 
 Regarding public access to data, note that the policy maintains a list of data collections where the data provider has exerted their right to restrict public access.  This includes data such as:
 
@@ -124,7 +137,7 @@ The TAF metadata convention is published and managed through the WGTAFGOVs GitHu
 
 There is a distinction between a project being publicly accessible (e.g. “released”), and data products being actively published (e.g. “published”).
 
-If a subset of a data product from a TAF project is to be published, it is a separate process, much like publishing documents or reports. Alternatively, for the stock assessment TAF type, many of the end results will be published through the Stock Assessment Graphs database (SAG), which creates a DOI per stock.
+If a subset of a data product from a TAF project is to be published, it is a separate process, much like publishing documents or reports. Alternatively, for the stock assessment TAF type, many of the end results will be published through the Stock Assessment Graphs database[^sag] (SAG), which creates a DOI per stock.
 
 If the entire project (data, model, output) is to be formally published, the suggested metadata profile should support mandatory fields for DataCite DOI publication. However, it is not envisaged that TAF projects are formally published by default.
 
@@ -154,7 +167,7 @@ The project-level metadata identifies a project type, which should help guide th
 
 The Working Group on the Transparent Assessment Framework Governance (WGTAFGOV) is responsible for governing TAF. The group will review proposed tasks and issues, and identify missing tasks to meet the overarching TAF aims and objectives. Priority should be concentrated in the areas which constitute the bulk of the ICES advice. The first priority would therefore be to ensure that TAF is able to handle the advice on fishing opportunities. This would be closely followed by the Fisheries Overviews that are largely generated using the outputs of the single stock advice and that include mixed fisheries analysis, which would greatly benefit from improved quality assurance. This would be followed by the Ecosystem overviews, other recurrent advice (e.g. advice on bycatch, advice on fishing intensity and pressure, etc)  and finally on non-recurrent advice.  Amongst the latter, it would be particularly important to document advice on the evaluation of Harvest Control Rules through Management Strategy Evaluations.
 
-To meet the objectives it is critical that missing functionality is identified, and both users and WGTAFGOV members are responsible for achieving this. WGTAFGOV members have a particular responsibility to identify functionality that will meet the overarching objectives of TAF, whereas users have a responsibility to identify functionality that meet the needs for their working group. The requests should be submitted directly to the GitHub issue tracker. The ICES secretariat will tag, review and refine the request and compose them into manageable tasks. The task list will be maintained through WGTAFGOV’s GitHub pages, and the prioritized task list will be visible through the dashboard .
+To meet the objectives it is critical that missing functionality is identified, and both users and WGTAFGOV members are responsible for achieving this. WGTAFGOV members have a particular responsibility to identify functionality that will meet the overarching objectives of TAF, whereas users have a responsibility to identify functionality that meet the needs for their working group. The requests should be submitted directly to the GitHub issue tracker[^issues]. The ICES secretariat will tag, review and refine the request and compose them into manageable tasks. The task list will be maintained through WGTAFGOV’s GitHub pages, and the prioritized task list will be visible through the dashboard[^project-board].
 
 WGTAFGOV will meet 4 times per year to work on the task list and provide guidance on the development. Before each meeting the Secretariat will update the task list and the WGTAFGOV chair will organize the meeting reviewing the proposed tasks. It is expected that the WGTAFGOV members familiarize themselves with any new tasks, and help identify missing tasks for meeting the objectives.
 
@@ -167,3 +180,16 @@ WGTAFGOV is responsible for reviewing and developing the task list, and making p
 WGTAFGOV reports to the Fisheries Resources Steering Group (FRSG). FRSG will, on behalf of WGTAFGOV, report to ACOM and SCICOM on the development of TAF, and ask for guidance and input that will be passed on to WGTAFGOV for consideration. In general, WGTAFGOV is responsible for the technical implementation, whereas FRSG will provide guidance on the overarching prioritisation on behalf of SCICOM and ACOM.
 
 The secretariat is responsible for hosting and maintaining the TAF system, including the pages on the ICES website, the TAF web application, the TAF server, and the related GitHub repositories.
+
+
+## Footnotes
+
+[^advisory-plan]: https://issuu.com/icesdk/docs/ices_advisory_plan
+[^external-advisory-review]: http://www.ices.dk/sites/pub/Publication%20Reports/Committee%20report/Council/External_Advisory_Review.pdf
+[^ices-taf]: https://github.com/ices-taf
+[^wg_WGTAFGOV]: https://github.com/ices-eg/wg_WGTAFGOV
+[^project-types]: https://taf.ices.dk/repomanager/Dashboard/ProjectTypes
+[^ices-data-policy]: https://www.ices.dk/data/guidelines-and-policy/Pages/ICES-data-policy.aspx
+[^sag]: https://sg.ices.dk
+[^issues]: https://github.com/ices-eg/wg_WGTAFGOV/issues
+[^project-board]: https://github.com/ices-eg/wg_WGTAFGOV/projects/1
