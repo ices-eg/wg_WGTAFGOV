@@ -1,6 +1,6 @@
 # Working Group on the Transparent Assessment Framework Governance (WGTAFGOV)
 
-http://www.ices.dk/community/groups/Pages/WGTAFGOV.aspx - no page yet!
+http://www.ices.dk/community/groups/Pages/WGTAFGOV.aspx
 
 ## Contents
 
