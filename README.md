@@ -21,3 +21,8 @@ TAF is a platform for quality assurance of . The focus of the group will be to p
 User manuals will be updated by WGTAF, and the group will also identify and facilitate training and outreach requirements.
 
 The group works in close collaboration with the stock assessment working groups​, benchmark working groups and advice drafting working groups. Together with these groups WGTAF will work to identify future opportunities for development of TAF as a quality assurance platform.
+
+## Project board
+
+To track progress of current tasks, the TAFGOV and TAF team project board can be found here:
+[github.com/orgs/ices-eg/projects/10](https://github.com/orgs/ices-eg/projects/10)
