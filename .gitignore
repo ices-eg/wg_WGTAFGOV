@@ -3,3 +3,9 @@ wgtafgov-workspace.code-workspace
 
 TAF_Manifesto/*.md
 TAF_Manifesto/*.html
+
+.devcontainer
+.vscode
+/renv/
+renv.lock
+.Rprofile
