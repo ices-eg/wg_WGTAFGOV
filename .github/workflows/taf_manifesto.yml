@@ -27,6 +27,12 @@ jobs:
           https://ices-tools-prod.r-universe.dev
           https://packagemanager.posit.co/cran/__linux__/jammy/latest
 
+    - name: Install R dependencies
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        extra-packages: |
+          any::TAF
+
     - name: build manifesto
       run: Rscript -e rmarkdown::render"('taf_manifesto.Rmd', output_file='taf_manifesto.html')"
       working-directory: TAF_Manifesto
