@@ -5,24 +5,30 @@ on:
     paths:
       - TAF_Manifesto/TAF_Manifesto.Rmd
       - user_handbooks/user_handbooks.Rmd
+      - .github/workflows/taf_manifesto.yml
     branches:
       - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: rocker/r-rmd
 
     steps:
-    - name: install git
-      run: |
-        apt-get update && apt-get -y install git
-
     - name: checkout
-      uses: actions/checkout@master
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+      with:
+        extra-repositories: |
+          https://cloud.r-project.org
+          https://ices-tools-prod.r-universe.dev
+          https://packagemanager.posit.co/cran/__linux__/jammy/latest
 
     - name: build manifesto
-      run: R -e rmarkdown::render"('taf_manifesto.Rmd', output_file='taf_manifesto.html')"
+      run: Rscript -e rmarkdown::render"('taf_manifesto.Rmd', output_file='taf_manifesto.html')"
       working-directory: TAF_Manifesto
 
     - name: move taf_manifesto.html file to formatted_docs folder
@@ -31,7 +37,7 @@ jobs:
         mv TAF_Manifesto/taf_manifesto.html formatted_docs/taf_manifesto.html
 
     - name: build handbook
-      run: R -e rmarkdown::render"('user_handbook.Rmd', output_file='user_handbook.html')"
+      run: Rscript -e rmarkdown::render"('user_handbook.Rmd', output_file='user_handbook.html')"
       working-directory: user_handbooks
 
     - name: move user_handbook.html file to formatted_docs folder
