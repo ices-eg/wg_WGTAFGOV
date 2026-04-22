@@ -32,6 +32,7 @@ jobs:
       with:
         extra-packages: |
           any::TAF
+          any::rmarkdown
 
     - name: build manifesto
       run: Rscript -e rmarkdown::render"('taf_manifesto.Rmd', output_file='taf_manifesto.html')"
