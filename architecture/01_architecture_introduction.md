@@ -6,7 +6,9 @@ The current TAF team is composed of a thematic lead (full time), developer (2 da
 
 ## Core vision for TAF
 
-The main goal for TAF in 2026/2027 is to have a process that achieves the following:
+The main goal for TAF in 2026/2027 is to have a process that achieves the following: An ices scientist writes code to produce scientific advice. The code is checked that it conforms to certain standards, is stored along with appropriate metadata. The code is executed to produce results, plots and tables which are also stored. Access to the results is provided and is publicly accessible. A user freindly application (tafXplorer) provides a easy to navigate and consistent way to explore stock assessments.
+
+The tafXplorer is envisaged to replace large portions of the current expert group reports, as it will be a place to view and reference data, results (plots and data).
 
 ```mermaid
 flowchart LR
