@@ -25,15 +25,15 @@ flowchart TB
     Stakeholder["Advice Requesters<br/>Stakeholders<br/>Reviewers<br/>Public"]
 
     GH["GitHub Repository:<br/>TAF Code"]
-    WEB["TAF Portal: view and manage runs"]
-    ICESTAF["icesTAF R package: view and manage runs"]
+    WEB["TAF Portal:<br/>view and manage runs"]
+    ICESTAF["icesTAF R package:<br/>view and manage runs"]
 
     IS("Import service:<br/>TAF code and initial data")
 
     FS@{ shape: lin-cyl, label: "Repository Storage:<br/>TAF Server File System"}
-    VAL["Validation Service:<br/>TAF Standards Checks"]
-    RUN["Execution Service:<br/>Run Assessment"]
-    DB[("TAF Database:<br/> validation and results")]
+    VAL["Validation Service:<br/>TAF QC Checks"]
+    RUN("Execution Service:<br/>Run Assessment")
+    DB[("TAF Database:<br/>metadata<br/>status")]
     API[ASP.NET Core API]
     EXPLORER["<b>TafXplorer</b>:<br/>'adviceXplorer' for expert group reports"]
     RESULTS["Standard Assessment Outputs:<br/>Plots<br/>Tables<br/>PDF Reports"]
@@ -42,33 +42,27 @@ flowchart TB
     U -->|browser| WEB
     U -->|R| ICESTAF
 
-    Stakeholder -->|R| ICESTAF
-
-    GH e1@--> IS
-
-    API -.-> IS
-
-    IS e2@--> FS
-
-    e1@{ animate: true }
-    e2@{ animate: true }
-
-    FS --> VAL
-    FS --> RUN
-    RUN --> FS
-
-    VAL --> DB
-
-    RUN --> DB
+    Stakeholder -->|R - readonly| ICESTAF
 
     WEB --> API
     ICESTAF --> API
-    API --> DB
 
+    GH <--> VAL
+
+    GH e1@--> IS
+    e1@{ animate: true }
+    API -.-> IS
+    IS e2@--> FS
+    e2@{ animate: true }
+
+    FS <--> VAL
+    FS <--> RUN
+    FS --> DB
+
+    API --> DB
 
     DB --> EXPLORER
     EXPLORER --> RESULTS
-
 
     Stakeholder -->|browser| EXPLORER
 ```
