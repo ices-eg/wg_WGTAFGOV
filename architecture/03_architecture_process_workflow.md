@@ -48,8 +48,4 @@ flowchart TD
 
     e10@{ animate: true }
     e11@{ animate: true }
-
-    click D href "https://www.github.com/ices-taf" "Open this in a new tab" _blank
-
-    Xplorer --> D
   ```
