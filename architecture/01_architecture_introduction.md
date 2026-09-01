@@ -17,22 +17,25 @@ flowchart LR
     Catalogue@{ shape: lin-cyl, label: Central Storage}
 
     API@{ shape: tri, label: Access}
-    Explorer@{ shape: win-pane, label: "tafXplorer:</br>standard outputs" }
-    Advice@{ shape: doc, label: "Quality Assured</br>Assessment Products"}
+    Explorer@{ shape: win-pane, label: "tafXplorer:</br>Quality Assured</br>Assessment Products" }
+    Person@{ shape: stadium, label: "Public"}
 
     GitHub --> Validate
-    Validate --> Execute
-    Execute --> Catalogue
+    Validate --> Catalogue
+
+    Catalogue --> Execute --> Catalogue
+
     Catalogue --> API
+    API --> Person
     API --> Explorer
-    Explorer --> Advice
+    Explorer --> Person
   ```
 
 That is:
 
 - Code is submitted
 - Automated validation
-- Automated execution
+- Automated execution of valid code
   - standard plots and tables of input data
   - model diagnostics
   - standard plots and tables of outputs and results
@@ -42,4 +45,4 @@ That is:
   - metadata
 - data access
 - tafXplorer: standardised online version of EG report
-- public acess to detailed assessement products
+- public access to detailed assessement products
