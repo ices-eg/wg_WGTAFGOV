@@ -48,8 +48,11 @@ readiness_assessments <- function(repos) {
   # what was found of the link in the advice sheet of the stock and year, see
   # status/advice-sheets.qmd, going to the advice sheet. There are advice
   # sheets from 2024 on.
+  # Nothing is said of an assessment that is not published and whose advice
+  # sheet has no link: there is nothing for the sheet to link to.
+  nothing_to_say <- is.na(repos$advice_status) | (repos$advice_status == "No link" & !repos$published)
   assessments[["Advice link"]] <- ifelse(
-    is.na(repos$advice_status), "",
+    nothing_to_say, "",
     sprintf("<a href=\"%s\">%s</a>", repos$advice_url, repos$advice_status)
   )
   assessments
