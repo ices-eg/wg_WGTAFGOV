@@ -1,0 +1,29 @@
+---
+title: "TAF repositories"
+---
+
+Every analysis in TAF is a repository in the [ices-taf](https://github.com/ices-taf) organisation on GitHub. This page summarises all of them; [stock assessments](stock-assessments.qmd) looks at the assessments linked to advice.
+
+{{< include ../_generated/status-summary.md >}}
+
+## Repositories by year
+
+Repositories named for a year, `<year>_<name>`, counted by that year.
+
+::: {#taf-repos-by-year .taf-chart}
+:::
+
+## Repositories by type
+
+The type is the last part of the repository name, `<year>_<name>_<type>`, for the same repositories. Stock repositories without a type are counted as assessments.
+
+::: {#taf-repos-by-type .taf-chart}
+:::
+
+## Public repositories
+
+Private repositories are included in the counts above but are not listed.
+
+{{< include ../_generated/status-public-repos.md >}}
+
+{{< include ../_generated/status-data.md >}}

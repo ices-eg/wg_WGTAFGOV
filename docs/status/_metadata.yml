@@ -1,0 +1,8 @@
+resources:
+  - taf-status.js
+include-in-header:
+  text: |
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+include-after-body:
+  text: |
+    <script src="taf-status.js"></script>

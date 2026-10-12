@@ -38,13 +38,20 @@ jobs:
         use-public-rspm: true
 
     - name: Install R dependencies
-      run: Rscript -e 'install.packages("jsonlite")'
+      run: Rscript -e 'install.packages(c("jsonlite", "icesVocab"))'
 
     - name: read issue status from GitHub
       run: Rscript _scripts/progress.R
       working-directory: docs
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: read repository status from GitHub
+      run: Rscript _scripts/status.R
+      working-directory: docs
+      env:
+        # needs read access to the private repositories in ices-taf
+        GH_TOKEN: ${{ secrets.TAF_STATUS_TOKEN || secrets.GITHUB_TOKEN }}
 
     - name: build site
       run: quarto render docs

@@ -1,0 +1,45 @@
+---
+title: "Stock assessments"
+---
+
+How many of the stocks ICES gives advice on have their assessment in TAF, linked to the advice.
+
+A stock counts as implemented in TAF for a year when it has a repository in [ices-advice](https://github.com/ices-advice) for that year, and the matching `_assessment` repository in [ices-taf](https://github.com/ices-taf) contains a `model.R` script. The number of stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk).
+
+## Stocks implemented in TAF
+
+::: {.taf-filter}
+<label for="taf-year">Year</label>
+<select id="taf-year" class="form-select form-select-sm"></select>
+:::
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-lg-8}
+::: {#taf-stocks .taf-chart}
+:::
+:::
+
+::: {.g-col-12 .g-col-lg-4}
+**Stocks by expert group, [ ]{.taf-year-label}**
+
+```{=html}
+<table class="table table-sm taf-progress" id="taf-eg">
+<thead><tr><th>Expert group</th><th class="num">Count</th><th class="num">Coverage</th></tr></thead>
+<tbody></tbody>
+</table>
+```
+:::
+
+:::
+
+## Percentage of stocks with TAF assessments linked to advice
+
+::: {#taf-stocks-trend .taf-chart}
+:::
+
+## Data
+
+{{< include ../_generated/status-stocks-table.md >}}
+
+{{< include ../_generated/status-data.md >}}
