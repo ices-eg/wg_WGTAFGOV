@@ -43,7 +43,7 @@ qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
 dir.create(out_dir, showWarnings = FALSE)
 
-fragments <- c("status-summary", "status-public-repos", "status-stocks-table")
+fragments <- c("status-summary", "status-public-repos")
 
 # ---- helpers ---------------------------------------------------------------
 
@@ -248,7 +248,6 @@ build <- function() {
     sum(taf_repos$has_model), " at readiness level 1 or above, ",
     sum(taf_repos$trl %in% 2), " at level 2"
   )
-  taf_repos <- taf_repos[taf_repos$has_model, ]
 
   # stock list
   sd <- jsonlite::fromJSON(sd_url)$value
@@ -261,30 +260,18 @@ build <- function() {
   ))
   sd <- sd[!is.na(sd$category), ]
 
-  # assessments linked to advice: those with a <year>_<stock code>
-  # repository in ices-advice
-  is_stock_repo <- function(x) {
-    x$size > 2 & x$year >= first_year & x$stock %in% stock_codes
-  }
-  advice <- advice[grepl(tafreg, advice$name) & is_stock_repo(advice), ]
-  linked <- taf_repos[taf_repos$name %in% paste0(advice$name, "_assessment"), ]
-  linked <- linked[is_stock_repo(linked), ]
-
-  taf <- merge(linked, sd, by = c("stock", "year"))
-
-  by_year <- merge(
-    tally(sd, c("year", "category"), "stocks"),
-    tally(taf, c("year", "category"), "taf"),
-    all.x = TRUE
+  # the state of each stock in each year: the highest level of its
+  # repositories (0 for a repository with no level, NA for no repository) and
+  # whether it is published. Read by status/stock-assessments.qmd
+  taf_repos$level <- ifelse(is.na(taf_repos$trl), 0, taf_repos$trl)
+  state <- aggregate(cbind(level, published) ~ stock + year, taf_repos, max)
+  stocks <- merge(sd, state, all.x = TRUE)
+  stocks$published <- stocks$published %in% 1
+  write.csv(
+    stocks[order(stocks$year, stocks$eg, stocks$stock), ],
+    file.path(out_dir, "stocks.csv"),
+    row.names = FALSE
   )
-  by_year$taf[is.na(by_year$taf)] <- 0
-  by_year <- by_year[order(by_year$year, by_year$category), ]
-
-  by_eg <- merge(
-    tally(taf, c("eg", "year"), "n"),
-    tally(sd, c("eg", "year"), "total")
-  )
-  by_eg$percent <- round(100 * by_eg$n / by_eg$total, 1)
 
   # ---- summary tiles -------------------------------------------------------
 
@@ -333,20 +320,6 @@ build <- function() {
     "</tbody></table>"
   ))
 
-  # ---- stock assessment table ----------------------------------------------
-
-  write_html("status-stocks-table", c(
-    "<table class=\"table table-sm taf-progress\">",
-    "<thead><tr><th>Year</th><th>Category</th><th class=\"num\">Stocks</th><th class=\"num\">Implemented in TAF</th><th class=\"num\">Percentage</th></tr></thead>",
-    "<tbody>",
-    sprintf(
-      "<tr><td>%d</td><td>%s</td><td class=\"num\">%d</td><td class=\"num\">%d</td><td class=\"num\">%.1f%%</td></tr>",
-      by_year$year, by_year$category, by_year$stocks, by_year$taf,
-      100 * by_year$taf / by_year$stocks
-    ),
-    "</tbody></table>"
-  ))
-
   # ---- chart data ----------------------------------------------------------
 
   dated <- repos[!is.na(repos$year), ]
@@ -360,14 +333,12 @@ build <- function() {
     )
   }
 
-  # read by the R code in status/index.qmd and status/stock-assessments.qmd
+  # read by the R code in status/index.qmd
   write_data <- function(x, name) {
     write.csv(x, file.path(out_dir, paste0(name, ".csv")), row.names = FALSE)
   }
   write_data(tally(dated, "year", "n"), "repos-by-year")
   write_data(types, "repos-by-type")
-  write_data(by_year, "stocks-by-year")
-  write_data(by_eg, "stocks-by-eg")
 }
 
 result <- tryCatch(build(), error = function(e) e)

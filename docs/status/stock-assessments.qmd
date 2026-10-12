@@ -2,131 +2,135 @@
 title: "Stock assessments"
 ---
 
-How many of the stocks ICES gives advice on have their assessment in TAF, linked to the advice.
+How many of the stocks ICES gives advice on have their assessment in TAF, and how far along it is.
 
-A stock counts as implemented in TAF for a year when it has a repository in [ices-advice](https://github.com/ices-advice) for that year, and the matching `_assessment` repository in [ices-taf](https://github.com/ices-taf) contains a `model.R` script. The number of stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk).
+Each stock is placed by the [TAF readiness level](../system/readiness-level.qmd) of its assessment repository in [ices-taf](https://github.com/ices-taf) for the year. A stock is published when it also has a repository for the year in [ices-advice](https://github.com/ices-advice). The stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk). The individual assessments are listed under [TAF readiness](readiness.qmd).
 
 ```{r}
 #| include: false
 source("_plot.R")
 
-stocks <- read.csv("../_generated/stocks-by-year.csv")
+stocks <- read.csv("../_generated/stocks.csv")
 stocks$category <- factor(stocks$category, c("Category 1", "Categories 2-6"))
-stocks <- stocks[order(stocks$year, stocks$category), ]
 
-# nothing to show if no assessment could be read, see _scripts/status.R
-has_data <- any(stocks$taf > 0)
+# from the most to the least advanced, the order the bars are stacked in
+states <- c("Level 2", "Level 1", "No level", "No repository")
+state_colours <- setNames(c("#3987e5", "#9ec5f4", "#c9c8c1", "#efeeea"), states)
+stocks$state <- factor(
+  ifelse(is.na(stocks$level), "No repository", ifelse(stocks$level == 0, "No level", paste("Level", stocks$level))),
+  states
+)
+# in TAF to some degree: there is code, so level 1 or above
+stocks$in_taf <- stocks$level %in% 1:4
 
-# the years since the first with an assessment implemented in TAF
-years <- sort(unique(stocks$year))
-if (has_data) years <- years[years >= min(stocks$year[stocks$taf > 0])]
-stocks <- stocks[stocks$year %in% years, ]
-
-# as in the dashboard: show last year's assessments until August
-today <- as.POSIXlt(Sys.Date())
-start <- today$year + 1900 - (today$mon < 7)
-if (!start %in% years) start <- max(years)
+latest <- stocks[stocks$year == max(stocks$year), ]
+percent <- function(x) sprintf("%.0f%%", 100 * mean(x))
 ```
 
-`r if (!has_data) "::: {.callout-warning}\nNo stock assessments implemented in TAF could be read when this page was built, so the charts are not shown.\n:::"`
+In `r max(stocks$year)`, `r sum(latest$in_taf)` of the `r nrow(latest)` stocks (`r percent(latest$in_taf)`) have assessment code in TAF, at level 1 or above, and `r sum(latest$level %in% 2)` of them have reached level 2. Another `r sum(latest$level %in% 0)` stocks have a repository with no code in it yet. `r sum(latest$published)` stocks are published.
 
-## Stocks implemented in TAF
+## Stocks by readiness level
 
-Choose the year with the menu above the chart.
+Each year has two bars: one for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the lines show how many of them are published.
 
 ```{r}
 #| echo: false
-#| eval: !expr has_data
+counts <- as.data.frame(table(year = stocks$year, category = stocks$category, state = stocks$state))
+counts <- counts[order(counts$year, counts$category), ]
+published <- aggregate(published ~ year + category, stocks, sum)
+published <- published[order(published$year, published$category), ]
+# nothing was published before the first year with a published stock
+published <- published[published$year >= min(c(published$year[published$published > 0], Inf)), ]
+
+# two bars a year: the x axis is the year and, within it, the category
+short <- c("Category 1" = "1", "Categories 2-6" = "2-6")
+bar_x <- function(d) list(as.character(d$year), unname(short[as.character(d$category)]))
+
 p <- plot_ly()
-for (year in years) {
+for (state in states) {
+  d <- counts[counts$state == state, ]
   p <- p |>
     add_bars(
-      data = stocks[stocks$year == year, ],
-      x = ~category, y = ~stocks,
-      name = "Stocks", marker = list(color = blue), visible = year == start,
-      hovertemplate = "%{x}: %{y} stocks<extra></extra>"
-    ) |>
-    add_bars(
-      data = stocks[stocks$year == year, ],
-      x = ~category, y = ~taf,
-      name = "Stocks implemented in TAF", marker = list(color = orange), visible = year == start,
-      hovertemplate = "%{x}: %{y} implemented in TAF<extra></extra>"
+      x = bar_x(d), y = d$Freq, name = state,
+      marker = list(color = state_colours[[state]], line = list(color = "white", width = 2)),
+      customdata = paste(d$category, d$year),
+      hovertemplate = "%{customdata}: %{y} stocks"
     )
 }
-
-# one menu entry for each year, showing its two sets of bars
-year_menu <- list(
-  active = which(years == start) - 1,
-  x = 1, xanchor = "right", y = 1.12, yanchor = "bottom",
-  buttons = lapply(years, function(year) {
-    list(
-      method = "restyle", label = as.character(year),
-      args = list("visible", as.list(rep(years == year, each = 2)))
+for (category in levels(stocks$category)) {
+  d <- published[published$category == category, ]
+  p <- p |>
+    add_trace(
+      x = bar_x(d), y = d$published, name = paste("Published,", tolower(category)),
+      type = "scatter", mode = "lines+markers",
+      line = list(color = orange, width = 2, dash = if (category == "Category 1") "solid" else "dot"),
+      marker = list(color = orange, size = 8, line = list(color = "white", width = 2)),
+      customdata = paste(d$category, d$year),
+      hovertemplate = "%{customdata}: %{y} published"
     )
-  })
-)
-
+}
 p |>
   taf_layout(
-    barmode = "group",
-    xaxis = list(title = ""),
-    yaxis = list(title = "Count"),
-    updatemenus = list(year_menu)
-  )
+    barmode = "stack",
+    xaxis = list(title = "Data category, by year"),
+    yaxis = list(title = "Stocks")
+  ) |>
+  layout(legend = list(traceorder = "normal"))
 ```
 
-## Stocks by expert group
+## Coverage by expert group
 
-The number of stocks implemented in TAF for each expert group, and the percentage of the group's stocks that is.
+The percentage of each expert group's stocks that have assessment code in TAF, at level 1 or above. Click a group in the legend to hide it, and double-click to show it on its own.
 
 ```{r}
 #| echo: false
-#| eval: !expr has_data
-groups <- read.csv("../_generated/stocks-by-eg.csv")
-groups <- groups[groups$year %in% years, ]
-groups$cell <- sprintf("%d (%.1f%%)", groups$n, groups$percent)
+groups <- aggregate(cbind(in_taf, level2 = level %in% 2, published, stocks = 1) ~ eg + year, stocks, sum)
+groups$coverage <- 100 * groups$in_taf / groups$stocks
 
-wide <- reshape(
-  groups[c("eg", "year", "cell")],
-  idvar = "eg", timevar = "year", direction = "wide"
-)
-names(wide) <- sub("^cell[.]", "", names(wide))
-names(wide)[1] <- "Expert group"
-wide <- wide[c("Expert group", as.character(sort(unique(groups$year))))]
-wide[is.na(wide)] <- ""
+# the league table: the groups in the latest year, most covered first
+league <- groups[groups$year == max(groups$year), ]
+league <- league[order(-league$coverage, -league$in_taf, league$eg), ]
 
-# most covered in the latest year first
-latest <- groups[groups$year == max(groups$year), ]
-covered <- latest$percent[match(wide[[1]], latest$eg)]
-wide <- wide[order(-ifelse(is.na(covered), -1, covered), wide[[1]]), ]
+# eight colours, then the same again with dashed and dotted lines
+palette <- c("#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948")
+dashes <- c("solid", "dash", "dot")
 
-knitr::kable(wide, row.names = FALSE, align = c("l", rep("r", ncol(wide) - 1)))
-```
-
-## Percentage of stocks with TAF assessments linked to advice
-
-```{r}
-#| echo: false
-#| eval: !expr has_data
-stocks$percent <- 100 * stocks$taf / stocks$stocks
-
-plot_ly(
-  stocks,
-  x = ~year, y = ~percent, color = ~category, colors = c(blue, orange),
-  type = "scatter", mode = "lines+markers",
-  line = list(width = 2), marker = list(size = 8),
-  customdata = ~paste(taf, "of", stocks),
-  hovertemplate = "%{x}: %{y:.1f}% (%{customdata} stocks)"
-) |>
+p <- plot_ly()
+for (i in seq_len(nrow(league))) {
+  d <- groups[groups$eg == league$eg[i], ]
+  colour <- palette[(i - 1) %% length(palette) + 1]
+  p <- p |>
+    add_trace(
+      data = d, x = ~year, y = ~coverage, name = league$eg[i],
+      type = "scatter", mode = "lines+markers",
+      line = list(color = colour, width = 2, dash = dashes[(i - 1) %/% length(palette) + 1]),
+      marker = list(color = colour, size = 6),
+      customdata = ~paste(in_taf, "of", stocks),
+      hovertemplate = "%{x}: %{y:.0f}% (%{customdata} stocks)"
+    )
+}
+p |>
   taf_layout(
     xaxis = list(title = "", dtick = 1),
-    yaxis = list(
-      title = "Percentage of stocks", ticksuffix = "%",
-      range = c(0, ceiling(max(stocks$percent) / 10) * 10 + 2)
-    )
-  )
+    yaxis = list(title = "Stocks with code in TAF", ticksuffix = "%", range = c(-3, 103))
+  ) |>
+  layout(legend = list(orientation = "v", x = 1.02, y = 1))
 ```
 
-## Data
+The groups in `r max(stocks$year)`, ordered by coverage.
 
-{{< include ../_generated/status-stocks-table.md >}}
+```{r}
+#| echo: false
+knitr::kable(
+  data.frame(
+    "Expert group" = league$eg,
+    "Stocks" = league$stocks,
+    "With code in TAF" = league$in_taf,
+    "Coverage" = sprintf("%.0f%%", league$coverage),
+    "Level 2" = league$level2,
+    "Published" = league$published,
+    check.names = FALSE
+  ),
+  row.names = FALSE, align = "lrrrrr"
+)
+```
