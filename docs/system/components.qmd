@@ -1,0 +1,22 @@
+---
+title: "Software components"
+order: 7
+---
+
+The software behind TAF is developed in the [ices-tools-prod](https://github.com/ices-tools-prod) organisation on GitHub. The assessments themselves live in [ices-taf](https://github.com/ices-taf), one repository per assessment.
+
+## R packages
+
+| Package | Purpose |
+|---|---|
+| [TAF](https://github.com/ices-tools-prod/TAF) | Transparent Assessment Framework for reproducible research: the core package that defines the TAF format and runs an analysis. |
+| [icesTAF](https://github.com/ices-tools-prod/icesTAF) | Functions to support the ICES Transparent Assessment Framework. This is the R route to view and manage runs shown in the [business architecture](business.qmd). |
+| [qcTAF](https://github.com/ices-tools-prod/qcTAF) | The TAF quality checks, used for the automated validation step in the [process workflow](process-workflow.qmd). |
+
+## Quality check services
+
+| Repository | Purpose | Status |
+|---|---|---|
+| [taf-qc-validator](https://github.com/ices-tools-prod/taf-qc-validator) | Validates TAF repositories against the quality checks. | In use. Private repository. |
+| [taf-qc-dashboard](https://github.com/ices-tools-prod/taf-qc-dashboard) | Presents the results of running the quality checks across all assessment repositories in [ices-taf](https://github.com/ices-taf): pass rate, number of repositories, failed tests and more. | In use. |
+| [taf-qc-code-runner](https://github.com/ices-tools-prod/taf-qc-code-runner) | *Description to be written.* | Under development. Private repository. |

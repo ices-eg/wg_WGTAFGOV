@@ -8,6 +8,12 @@ title: "Resources"
 - [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/wg_WGTAFGOV/blob/master/formatted_docs/user_handbook.html)
 - [How to contribute](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/CONTRIBUTING.md)
 
+## Code
+
+- [Software components](system/components.qmd): the R packages and quality check services behind TAF
+- [ices-tools-prod](https://github.com/ices-tools-prod): where the TAF software is developed
+- [ices-taf](https://github.com/ices-taf): the assessment repositories
+
 ## Tracking
 
 - [Project board](https://github.com/orgs/ices-eg/projects/10)

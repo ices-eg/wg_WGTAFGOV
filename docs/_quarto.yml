@@ -35,6 +35,7 @@ website:
         - system/technical-layers.qmd
         - system/technical-overview.qmd
         - system/tafxplorer.qmd
+        - system/components.qmd
     - title: Strategy
       contents:
         - strategy/index.qmd
