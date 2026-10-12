@@ -63,7 +63,9 @@ Percentages are of the stocks ICES gives advice on in the year.
 
 ## Stocks by readiness level
 
-One panel for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the line shows how many of them are published. The menu above the chart switches between the number of stocks and the percentage of the stocks in the category.
+One panel for the category 1 stocks and one for the stocks in categories 2 to 6. The bars are the stocks at each level, and the line shows how many are published.
+
+The chart opens as percentages of the stocks in the category, and without the stocks that have no repository. The menu above the chart switches between percentages and the number of stocks. Click **No repository** in the legend to add those stocks, which takes each bar up to all the stocks of the category.
 
 ```{r}
 #| echo: false
@@ -88,26 +90,28 @@ panel <- function(category, legend) {
     p <- p |>
       add_bars(
         data = drawn[drawn$category == category & drawn$state == state, ],
-        x = ~year, y = ~n, name = state,
+        x = ~year, y = ~percent, name = state,
         legendgroup = state, showlegend = legend,
+        # the stocks with no repository are left out until clicked in the legend
+        visible = if (state == "No repository") "legendonly" else TRUE,
         marker = list(color = state_colours[[state]], line = list(color = "white", width = 2)),
-        hovertemplate = "%{x}: %{y} stocks"
+        hovertemplate = "%{x}: %{y:.0f}% of stocks"
       )
   }
   p |>
     add_trace(
       data = drawn[drawn$category == category & drawn$state == "Published", ],
-      x = ~year, y = ~n, name = "Published",
+      x = ~year, y = ~percent, name = "Published",
       legendgroup = "Published", showlegend = legend,
       type = "scatter", mode = "lines+markers",
       line = list(color = orange, width = 2),
       marker = list(color = orange, size = 8, line = list(color = "white", width = 2)),
-      hovertemplate = "%{x}: %{y} stocks"
+      hovertemplate = "%{x}: %{y:.0f}% of stocks"
     ) |>
     layout(
       barmode = "stack",
       xaxis = list(title = "", dtick = 1),
-      yaxis = list(title = "Stocks")
+      yaxis = list(title = "Percentage of stocks", ticksuffix = "%")
     )
 }
 
@@ -128,7 +132,9 @@ menu_entry <- function(label, column, hover, suffix) {
     )
   )
 }
+# the chart is drawn as percentages to begin with
 menu <- list(
+  active = 1,
   x = 1, xanchor = "right", y = 1.04, yanchor = "bottom",
   buttons = list(
     menu_entry("Stocks", "n", "%{x}: %{y} stocks", ""),
