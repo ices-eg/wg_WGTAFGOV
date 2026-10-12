@@ -3,8 +3,9 @@
 # Run from the docs/ folder before `quarto render`, like progress.R.
 #
 # Reads the repository lists of the ices-taf and ices-advice organisations
-# with the GitHub CLI, the stock codes from the ICES vocabulary (icesVocab)
-# and the stock list from the ICES Stock Database. Most
+# with the GitHub CLI, the stock codes from the ICES vocabulary (icesVocab),
+# the QC results from the taf-qc-dashboard repository and the stock list from
+# the ICES Stock Database. Most
 # ices-taf repositories are private, so `gh` must be authenticated as someone
 # who can read them (in GitHub Actions: the TAF_STATUS_TOKEN secret), otherwise
 # only the public repositories are counted.
@@ -32,6 +33,13 @@ stock_parts <- c("west", "south")
 
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
+
+# QC results, one entry for each repository tested, named ices-taf_<name>
+qc_url <- "https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/main/json/master.json"
+# a repository without a SOFTWARE.bib file fails these two checks together,
+# which still counts as passing the QC test. Failing only the second means
+# the file is there but not valid, which does not.
+qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
 # ---- helpers ---------------------------------------------------------------
 
@@ -162,6 +170,23 @@ model_scripts <- function(names, owner = "ices-taf") {
   out
 }
 
+# the QC test result for each repository: whether it was tested, and whether
+# it passed, either outright or failing only for having no SOFTWARE.bib file
+qc_results <- function(names) {
+  qc <- jsonlite::fromJSON(qc_url, simplifyVector = FALSE)
+  passed <- vapply(qc, function(x) {
+    # a failed check with no name is still a failure
+    failed <- vapply(x$failed_checks, function(check) if (is.null(check)) NA_character_ else check, "")
+    isTRUE(x$passed) || setequal(failed, qc_no_software_bib)
+  }, TRUE)
+  i <- match(names, sub("^ices-taf_", "", vapply(qc, function(x) x$repository, "")))
+  data.frame(
+    qc_tested = !is.na(i),
+    qc_passed = passed[i],
+    qc_date = substr(vapply(qc, function(x) x$timestamp, ""), 1, 10)[i]
+  )
+}
+
 category <- function(data_category) {
   x <- floor(suppressWarnings(as.numeric(data_category)))
   ifelse(x < 2, "Category 1", "Categories 2-6")
@@ -192,12 +217,16 @@ build <- function() {
   taf_repos <- taf_assessments(repos, stock_codes)
   # TAF readiness level, see system/readiness-level.qmd
   # level 1: the code is on GitHub, a model.R script with more than the TAF
-  # skeleton in it. No repository has been tested for levels 2 and 3 yet.
+  # skeleton in it
   taf_repos <- cbind(taf_repos, model_scripts(taf_repos$name))
   taf_repos$has_model <- taf_repos$model_size > min_model_size
   taf_repos$trl <- ifelse(taf_repos$has_model, 1, NA)
+  # level 2: at level 1 and passes the QC test. No repository has been tested
+  # for level 3 yet.
+  taf_repos <- cbind(taf_repos, qc_results(taf_repos$name))
+  taf_repos$trl[taf_repos$has_model & taf_repos$qc_passed %in% TRUE] <- 2
   # published: the stock has a repository for the year in ices-advice. This is
-  # recorded separately, as level 4 can only follow levels 2 and 3
+  # recorded separately, as level 4 can only follow level 3
   taf_repos$published <-
     sub("_assessment$", "", taf_repos$name) %in% advice$name |
     paste(taf_repos$year, taf_repos$stock, sep = "_") %in% advice$name
@@ -206,14 +235,14 @@ build <- function() {
   write.csv(
     taf_repos[
       order(taf_repos$year, taf_repos$stock),
-      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "trl", "published")
+      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "qc_tested", "qc_passed", "qc_date", "trl", "published")
     ],
     file.path(out_dir, "taf-repos.csv"),
     row.names = FALSE
   )
   message(
-    sum(taf_repos$has_model), " at readiness level 1, ",
-    sum(taf_repos$has_model & taf_repos$published), " of them published"
+    sum(taf_repos$has_model), " at readiness level 1 or above, ",
+    sum(taf_repos$trl %in% 2), " at level 2"
   )
   taf_repos <- taf_repos[taf_repos$has_model, ]
 

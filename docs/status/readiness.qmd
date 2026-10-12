@@ -10,42 +10,57 @@ library(plotly)
 
 repos <- read.csv("../_generated/taf-repos.csv")
 
-repos$status <- factor(
-  paste(
-    ifelse(is.na(repos$trl), "No level", paste("Level", repos$trl)),
-    ifelse(repos$published, "published", "not published"),
-    sep = ", "
-  ),
-  levels = c(
-    "Level 1, published", "Level 1, not published",
-    "No level, published", "No level, not published"
-  )
-)
-colours <- c("#1c5cab", "#86b6ef", "#8a8984", "#d5d4ce")
+levels <- c("No level", paste("Level", 1:4))
+colours <- setNames(c("#d5d4ce", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"), levels)
+repos$level <- factor(ifelse(is.na(repos$trl), 0, repos$trl), 0:4, levels)
 
-counts <- as.data.frame(table(year = repos$year, status = repos$status))
-counts$year <- as.numeric(as.character(counts$year))
-n <- table(repos$status)
+n <- table(repos$level)
+at_least <- function(level) sum(repos$trl >= level, na.rm = TRUE)
+untested <- sum(repos$trl %in% 1 & !repos$qc_tested)
+
+# one panel of the chart: repositories by year and level
+panel <- function(published, legend) {
+  counts <- as.data.frame(table(
+    year = repos$year[repos$published == published],
+    level = droplevels(repos$level)[repos$published == published]
+  ))
+  counts$year <- as.numeric(as.character(counts$year))
+  plot_ly(
+    counts,
+    x = ~year, y = ~Freq, color = ~level, colors = colours,
+    type = "bar", legendgroup = ~level, showlegend = legend,
+    marker = list(line = list(color = "white", width = 2)),
+    hovertemplate = "%{x}: %{y} repositories"
+  ) |>
+    layout(
+      barmode = "stack",
+      xaxis = list(title = "", dtick = 1),
+      yaxis = list(title = "Assessment repositories")
+    )
+}
 ```
 
-There are `r nrow(repos)` stock assessment repositories. `r sum(!is.na(repos$trl))` are at level 1, with their code on GitHub, and `r n[["Level 1, published"]]` of those are published in [ices-advice](https://github.com/ices-advice). No assessment has been tested for level 2 yet, so none is above level 1.
+There are `r nrow(repos)` stock assessment repositories.
 
-A further `r sum(is.na(repos$trl))` repositories have no level, because they have no `model.R` script or only an empty one. `r n[["No level, published"]]` of them are for stocks that are published.
+- `r at_least(1)` have reached level 1, with their code on GitHub.
+- `r at_least(2)` of those have reached level 2, passing the QC test. `r untested` of the repositories at level 1 have not been tested.
+- None has been tested for level 3 yet.
+- `r n[["No level"]]` have no level, because they have no `model.R` script or only an empty one.
+
+`r sum(repos$published)` of the repositories are for stocks published in [ices-advice](https://github.com/ices-advice): `r sum(repos$published & repos$trl %in% 2)` at level 2, `r sum(repos$published & repos$trl %in% 1)` at level 1 and `r sum(repos$published & is.na(repos$trl))` with no level.
+
+The QC results are from `r format(as.Date(max(repos$qc_date, na.rm = TRUE)), "%e %B %Y")`.
 
 ```{r}
 #| echo: false
-plot_ly(
-  counts,
-  x = ~year, y = ~Freq, color = ~status, colors = colours,
-  type = "bar",
-  marker = list(line = list(color = "white", width = 2)),
-  hovertemplate = "%{x}: %{y} repositories"
-) |>
+# the published assessments only go back a few years
+subplot(panel(TRUE, TRUE), panel(FALSE, FALSE), shareY = TRUE, widths = c(0.28, 0.72), margin = 0.03) |>
   layout(
-    barmode = "stack",
-    xaxis = list(title = "", dtick = 1),
-    yaxis = list(title = "Assessment repositories"),
-    legend = list(orientation = "h", y = 1.15, traceorder = "normal"),
+    annotations = list(
+      list(text = "<b>Published</b>", x = 0, xref = "x domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE),
+      list(text = "<b>Not published</b>", x = 0, xref = "x2 domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE)
+    ),
+    legend = list(orientation = "h", y = -0.12, traceorder = "normal"),
     font = list(family = "inherit"),
     hoverlabel = list(namelength = -1),
     paper_bgcolor = "rgba(0,0,0,0)",
@@ -56,6 +71,13 @@ plot_ly(
 
 ```{r}
 #| echo: false
-wide <- as.data.frame.matrix(table(Year = repos$year, repos$status))
-knitr::kable(cbind(Year = rownames(wide), wide), row.names = FALSE)
+wide <- as.data.frame(table(
+  Year = repos$year,
+  Published = ifelse(repos$published, "Yes", "No"),
+  level = droplevels(repos$level)
+))
+wide <- reshape(wide, idvar = c("Year", "Published"), timevar = "level", direction = "wide")
+names(wide) <- sub("^Freq[.]", "", names(wide))
+wide <- wide[rowSums(wide[-(1:2)]) > 0, ]
+knitr::kable(wide[order(wide$Year, wide$Published), ], row.names = FALSE)
 ```
