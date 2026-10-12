@@ -2,7 +2,8 @@ name: UpdateAdvice
 on:
   workflow_dispatch:
   schedule:
-    # weekly: new advice sheets, and the links to GitHub in them
+    # weekly: new advice sheets and the links to GitHub in them, and the
+    # model scripts of the repositories pushed to during the week
     - cron: '0 2 * * 1'
 
 permissions:
@@ -28,11 +29,19 @@ jobs:
       run: Rscript _scripts/advice.R
       working-directory: docs
 
+    # keeps the site quick to build: see docs/_scripts/status.R
+    - name: read the repositories pushed to since last time
+      run: Rscript _scripts/status.R
+      working-directory: docs
+      env:
+        # needs read access to the private repositories in ices-taf
+        GH_TOKEN: ${{ secrets.TAF_STATUS_TOKEN || secrets.GITHUB_TOKEN }}
+
     # the site picks this up at its next build
-    - name: commit the advice sheets
+    - name: commit the data
       run: |
         git config --local user.email "github@ices.dk"
         git config --local user.name "ices-github-bot"
-        git add docs/_data/advice-sheets.csv
-        git diff --cached --quiet || git commit -m "Update advice sheets"
+        git add docs/_data
+        git diff --cached --quiet || git commit -m "Update advice sheets and repository data"
         git push

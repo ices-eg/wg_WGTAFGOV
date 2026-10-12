@@ -6,6 +6,7 @@ Source for the site published at <https://ices-eg.github.io/wg_WGTAFGOV/>.
 - `strategy/`: goals and roadmap
 - `status/`: status of the TAF repositories, filled in from GitHub and the ICES Stock Database by `_scripts/status.R`
 - `_data/advice-sheets.csv`: the ICES advice sheets from 2024 on and the GitHub links in them, updated once a week by the `UpdateAdvice` workflow, which runs `_scripts/advice.R` and commits the result. Building the site reads this file and makes no requests to the ICES library.
+- `_data/model-scripts.csv`: the size of the model scripts in each assessment repository, kept so that `_scripts/status.R` only looks again at repositories that have been pushed to. It is committed, and refreshed by the same weekly workflow.
 - `progress.qmd`: issue status, filled in from GitHub by `_scripts/progress.R`
 
 The site is rebuilt by the `PublishDocs` workflow on every push to `master` that changes `docs/`, and once a night to refresh the status and progress pages.

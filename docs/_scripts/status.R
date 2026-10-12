@@ -6,6 +6,12 @@
 # with the GitHub CLI, the stock codes from the ICES vocabulary (icesVocab),
 # the QC results from the taf-qc-dashboard repository, the stock list from
 # the ICES Stock Database and the advice sheets from _data/advice-sheets.csv.
+#
+# Looking at the files of each repository is slow, so what is found is kept in
+# _data/model-scripts.csv, which is committed, and only the repositories
+# pushed to since are looked at again. The UpdateAdvice workflow commits it once
+# a week; in between, a build reads the few that have changed.
+#
 # Most
 # ices-taf repositories are private, so `gh` must be authenticated as someone
 # who can read them (in GitHub Actions: the TAF_STATUS_TOKEN secret), otherwise
@@ -35,6 +41,10 @@ stock_parts <- c("west", "south")
 
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
+
+# the model scripts of each repository, kept from one run to the next so that
+# only the repositories pushed to since are read again
+models_file <- "_data/model-scripts.csv"
 
 # the advice sheets and the GitHub links in them, updated by _scripts/advice.R
 sheets_file <- "_data/advice-sheets.csv"
@@ -187,6 +197,30 @@ model_scripts <- function(names, owner = "ices-taf") {
   out
 }
 
+# the model scripts of the repositories, read from GitHub only for those that
+# are new or have been pushed to since they were last read. Reading them is
+# most of the time this script takes.
+cached_model_scripts <- function(repos) {
+  known <- if (file.exists(models_file)) {
+    read.csv(models_file, stringsAsFactors = FALSE)
+  } else {
+    data.frame(name = character(), pushed = character(), model_r = numeric(), model_size = numeric())
+  }
+  current <- merge(repos[c("name", "pushed")], known, all.x = TRUE, sort = FALSE)
+  # nothing is recorded for a repository that has not been read
+  stale <- !paste(current$name, current$pushed) %in% paste(known$name, known$pushed)
+  message(sum(stale), " of ", nrow(current), " repositories to read the model scripts of")
+  if (any(stale)) {
+    current[stale, c("model_r", "model_size")] <- model_scripts(current$name[stale])
+    dir.create(dirname(models_file), showWarnings = FALSE)
+    # keep what is known of repositories that cannot be seen this time, as
+    # when run without access to the private ones
+    kept <- rbind(current, known[!known$name %in% current$name, names(current)])
+    write.csv(kept[order(kept$name), ], models_file, row.names = FALSE)
+  }
+  current[match(repos$name, current$name), c("model_r", "model_size")]
+}
+
 # the QC test result for each repository: whether it was tested, and whether
 # it passed, either outright or failing only for having no SOFTWARE.bib file
 qc_results <- function(names) {
@@ -284,7 +318,7 @@ build <- function() {
   # TAF readiness level, see system/readiness-level.qmd
   # level 1: the code is on GitHub, a model.R script with more than the TAF
   # skeleton in it
-  taf_repos <- cbind(taf_repos, model_scripts(taf_repos$name))
+  taf_repos <- cbind(taf_repos, cached_model_scripts(taf_repos))
   taf_repos$has_model <- taf_repos$model_size > min_model_size
   taf_repos$trl <- ifelse(taf_repos$has_model, 1, NA)
   # level 2: at level 1 and passes the QC test. No repository has been tested
