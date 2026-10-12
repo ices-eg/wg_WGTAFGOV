@@ -104,10 +104,7 @@ readiness_chart <- function(assessments, shared = NULL) {
           data = d,
           x = ~Year, y = ~n, base = ~base,
           name = "Published",
-          marker = list(
-            pattern = list(shape = ".", fgcolor = "#8a8984", bgcolor = "rgba(0,0,0,0)", size = 5, solidity = 0.4),
-            line = list(color = "#8a8984", width = 1)
-          ),
+          marker = list(color = "#d3e7c0", line = list(color = "white", width = 2)),
           customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
         )
     }
