@@ -31,51 +31,56 @@ In `r max(stocks$year)`, `r sum(latest$in_taf)` of the `r nrow(latest)` stocks (
 
 ## Stocks by readiness level
 
-Each year has two bars: one for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the lines show how many of them are published.
+One panel for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the line shows how many of them are published.
 
 ```{r}
 #| echo: false
 counts <- as.data.frame(table(year = stocks$year, category = stocks$category, state = stocks$state))
-counts <- counts[order(counts$year, counts$category), ]
+counts$year <- as.numeric(as.character(counts$year))
 published <- aggregate(published ~ year + category, stocks, sum)
-published <- published[order(published$year, published$category), ]
 # nothing was published before the first year with a published stock
 published <- published[published$year >= min(c(published$year[published$published > 0], Inf)), ]
 
-# two bars a year: the x axis is the year and, within it, the category
-short <- c("Category 1" = "1", "Categories 2-6" = "2-6")
-bar_x <- function(d) list(as.character(d$year), unname(short[as.character(d$category)]))
-
-p <- plot_ly()
-for (state in states) {
-  d <- counts[counts$state == state, ]
-  p <- p |>
-    add_bars(
-      x = bar_x(d), y = d$Freq, name = state,
-      marker = list(color = state_colours[[state]], line = list(color = "white", width = 2)),
-      customdata = paste(d$category, d$year),
-      hovertemplate = "%{customdata}: %{y} stocks"
-    )
-}
-for (category in levels(stocks$category)) {
-  d <- published[published$category == category, ]
-  p <- p |>
+# one panel of the chart: the stocks of a category by year and state
+panel <- function(category, legend) {
+  p <- plot_ly()
+  for (state in states) {
+    p <- p |>
+      add_bars(
+        data = counts[counts$category == category & counts$state == state, ],
+        x = ~year, y = ~Freq, name = state,
+        legendgroup = state, showlegend = legend,
+        marker = list(color = state_colours[[state]], line = list(color = "white", width = 2)),
+        hovertemplate = "%{x}: %{y} stocks"
+      )
+  }
+  p |>
     add_trace(
-      x = bar_x(d), y = d$published, name = paste("Published,", tolower(category)),
+      data = published[published$category == category, ],
+      x = ~year, y = ~published, name = "Published",
+      legendgroup = "Published", showlegend = legend,
       type = "scatter", mode = "lines+markers",
-      line = list(color = orange, width = 2, dash = if (category == "Category 1") "solid" else "dot"),
+      line = list(color = orange, width = 2),
       marker = list(color = orange, size = 8, line = list(color = "white", width = 2)),
-      customdata = paste(d$category, d$year),
-      hovertemplate = "%{customdata}: %{y} published"
+      hovertemplate = "%{x}: %{y} published"
+    ) |>
+    layout(
+      barmode = "stack",
+      xaxis = list(title = "", dtick = 1),
+      yaxis = list(title = "Stocks")
     )
 }
-p |>
+
+panels <- lapply(levels(stocks$category), function(category) panel(category, category == "Category 1"))
+subplot(panels, shareY = TRUE, margin = 0.03) |>
   taf_layout(
-    barmode = "stack",
-    xaxis = list(title = "Data category, by year"),
-    yaxis = list(title = "Stocks")
+    annotations = list(
+      list(text = "<b>Category 1</b>", x = 0, xref = "x domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE),
+      list(text = "<b>Categories 2-6</b>", x = 0, xref = "x2 domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE)
+    ),
+    margin = list(t = 40)
   ) |>
-  layout(legend = list(traceorder = "normal"))
+  layout(legend = list(y = -0.12, traceorder = "normal"))
 ```
 
 ## Coverage by expert group
