@@ -90,7 +90,7 @@ readiness_chart <- function(assessments, shared = NULL) {
           customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
         )
     }
-    # on top of the not published, a dotted block the size of the published,
+    # on top of the not published, a block the size of the published,
     # so that the bars of this panel reach the total for the year
     if (published == "Not published") {
       d <- aggregate(list(key = I(bars$key)), bars[c("Year", "Published")], function(x) I(list(unlist(x))))
