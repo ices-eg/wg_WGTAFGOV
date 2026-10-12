@@ -67,49 +67,68 @@ readiness_assessments <- function(repos) {
 # not published. Given the assessments as data shared with a table, clicking
 # a bar filters the table.
 readiness_chart <- function(assessments, shared = NULL) {
-  # the bars: the number of assessments by year and level, stacked by hand so
-  # that a clicked bar is highlighted in place. Each bar carries the keys of
-  # its assessments, which is what links it to the rows of the table.
   keys <- if (is.null(shared)) as.character(seq_len(nrow(assessments))) else shared$key()
-  bars <- aggregate(
-    list(key = keys),
-    assessments[c("Level", "Year", "Published")],
-    function(x) I(list(x))
-  )
-  bars$n <- lengths(bars$key)
-  bars <- bars[order(bars$Published, bars$Year, bars$Level), ]
-  bars$base <- ave(bars$n, bars$Published, bars$Year, FUN = function(n) cumsum(n) - n)
+  published <- assessments$Published == "Published"
+  no_level <- assessments$Level == "No level"
+  levels_found <- setdiff(levels(droplevels(assessments$Level)), "No level")
 
-  # one panel of the chart, with a set of bars for each level
-  panel <- function(published, legend) {
-    p <- plot_ly()
-    for (level in levels(droplevels(assessments$Level))) {
-      d <- bars[bars$Published == published & bars$Level == level, ]
-      if (!is.null(shared)) d <- crosstalk::SharedData$new(d, key = ~key, group = shared$groupName())
-      p <- p |>
-        add_bars(
-          data = d,
-          x = ~Year, y = ~n, base = ~base,
-          name = level, marker = list(color = readiness_colours[[level]], line = list(color = "white", width = 2)),
-          legendgroup = level, showlegend = legend,
-          customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
-        )
+  # the bars: a block of assessments in each year, with the keys of its
+  # assessments, which is what links it to the rows of the table
+  block <- function(rows, panel, name, colour, group = name) {
+    if (!any(rows)) {
+      return(NULL)
     }
-    # on top of the not published, a block the size of the published,
-    # so that the bars of this panel reach the total for the year
-    if (published == "Not published") {
-      d <- aggregate(list(key = I(bars$key)), bars[c("Year", "Published")], function(x) I(list(unlist(x))))
-      d$n <- lengths(d$key)
-      rest <- d[d$Published == "Not published", ]
-      d <- d[d$Published == "Published", ]
-      d$base <- ifelse(d$Year %in% rest$Year, rest$n[match(d$Year, rest$Year)], 0)
-      if (!is.null(shared)) d <- crosstalk::SharedData$new(d, key = ~key, group = shared$groupName())
+    d <- aggregate(list(key = keys[rows]), list(Year = assessments$Year[rows]), function(x) I(list(x)))
+    data.frame(d, n = lengths(d$key), panel = panel, name = name, colour = colour, group = group)
+  }
+  # the blocks from the bottom of a bar up. Those with no level are at the
+  # top, so that the rest still stand on the axis when "No level" is clicked
+  # in the legend to hide them. In the panel of the not published, the
+  # published are drawn again on top, so that its bars reach the total for
+  # the year.
+  blocks <- c(
+    lapply(levels_found, function(level) {
+      block(published & assessments$Level == level, "Published", level, readiness_colours[[level]])
+    }),
+    list(block(published & no_level, "Published", "No level", readiness_colours[["No level"]])),
+    lapply(levels_found, function(level) {
+      block(!published & assessments$Level == level, "Not published", level, readiness_colours[[level]])
+    }),
+    list(
+      block(published & !no_level, "Not published", "Published", "#d3e7c0"),
+      block(!published & no_level, "Not published", "No level", readiness_colours[["No level"]]),
+      block(published & no_level, "Not published", "Published, no level", "#e9f2df", group = "No level")
+    )
+  )
+  blocks <- Filter(Negate(is.null), blocks)
+  # stacked by hand, so that a clicked bar is highlighted in place
+  height <- numeric()
+  for (i in seq_along(blocks)) {
+    at <- paste(blocks[[i]]$panel, blocks[[i]]$Year)
+    below <- unname(ifelse(at %in% names(height), height[at], 0))
+    blocks[[i]]$base <- below
+    height[at] <- below + blocks[[i]]$n
+  }
+  # one entry in the legend for each name
+  names_seen <- vapply(blocks, function(d) d$name[1], "")
+  in_legend <- !duplicated(names_seen) & names_seen != "Published, no level"
+
+  # one panel of the chart
+  panel <- function(which) {
+    p <- plot_ly()
+    for (i in seq_along(blocks)) {
+      d <- blocks[[i]]
+      if (d$panel[1] != which) next
+      colour <- d$colour[1]
+      data <- if (is.null(shared)) d else crosstalk::SharedData$new(d, key = ~key, group = shared$groupName())
       p <- p |>
         add_bars(
-          data = d,
+          data = data,
           x = ~Year, y = ~n, base = ~base,
-          name = "Published",
-          marker = list(color = "#d3e7c0", line = list(color = "white", width = 2)),
+          name = d$name[1], marker = list(color = colour, line = list(color = "white", width = 2)),
+          legendgroup = d$group[1], showlegend = in_legend[i],
+          # those with no level are left out until clicked in the legend
+          visible = if (d$group[1] == "No level") "legendonly" else TRUE,
           customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
         )
     }
@@ -125,7 +144,7 @@ readiness_chart <- function(assessments, shared = NULL) {
     list(text = paste0("<b>", text, "</b>"), x = 0, xref = paste(axis, "domain"), y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE)
   }
   # the published assessments only go back a few years
-  p <- subplot(panel("Published", TRUE), panel("Not published", FALSE), shareY = TRUE, widths = c(0.28, 0.72), margin = 0.03) |>
+  p <- subplot(panel("Published"), panel("Not published"), shareY = TRUE, widths = c(0.28, 0.72), margin = 0.03) |>
     taf_layout(
       annotations = list(title("Published", "x"), title("Not published", "x2")),
       margin = list(t = 40)
