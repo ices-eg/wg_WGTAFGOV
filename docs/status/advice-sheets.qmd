@@ -48,18 +48,22 @@ latest <- sheets[sheets$year == max(sheets$year), ]
 Of the `r nrow(sheets)` advice sheets since `r min(sheets$year)`, **`r sum(sheets$status == "OK")` link to the published code** of their stock. **`r sum(sheets$status %in% problems)` have a problem with the link**, of which `r sum(sheets$status == "Links to ices-taf")` link to ices-taf by mistake. In `r max(sheets$year)`, `r sum(latest$status == "OK")` of the `r nrow(latest)` advice sheets link to the published code and `r sum(latest$status %in% problems)` have a problem.
 :::
 
-## What was found
+## Advice sheet TAF link check
+
+The number of advice sheets each year, by what was found.
 
 ```{r}
 #| echo: false
+by_year <- as.data.frame.matrix(table(sheets$status, sheets$year))[found, , drop = FALSE]
 knitr::kable(
   data.frame(
     Status = found,
-    "Advice sheets" = as.vector(table(sheets$status)[found]),
+    by_year,
+    Total = rowSums(by_year),
     Meaning = unname(statuses[found]),
     check.names = FALSE
   ),
-  align = "lrl"
+  row.names = FALSE, align = c("l", rep("r", ncol(by_year) + 1), "l")
 )
 ```
 

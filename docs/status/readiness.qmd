@@ -32,6 +32,8 @@ The QC results are from `r format(as.Date(max(repos$qc_date, na.rm = TRUE)), "%e
 
 The last column of the table is what was found of the link to GitHub in the [advice sheet](advice-sheets.qmd) of the stock, for the advice from 2024 on.
 
+The dotted blocks in the panel of the not published are the published assessments of the year, drawn on top so that its bars show all the assessments of each year.
+
 Click a bar to list its assessments in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}

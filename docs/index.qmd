@@ -43,7 +43,7 @@ source("status/_plot.R")
 repos <- read.csv("_generated/taf-repos.csv")
 ```
 
-The stock assessment repositories by year and [TAF readiness level](system/readiness-level.qmd): `r sum(repos$trl >= 1, na.rm = TRUE)` of the `r nrow(repos)` have their code on GitHub, and `r sum(repos$trl >= 2, na.rm = TRUE)` of those pass the QC test. The assessments behind each bar are listed under [TAF readiness](status/readiness.qmd).
+The stock assessment repositories by year and [TAF readiness level](system/readiness-level.qmd): `r sum(repos$trl >= 1, na.rm = TRUE)` of the `r nrow(repos)` have their code on GitHub, and `r sum(repos$trl >= 2, na.rm = TRUE)` of those pass the QC test. The dotted blocks are the published assessments of the year, repeated on top of the not published to show the total. The assessments behind each bar are listed under [TAF readiness](status/readiness.qmd).
 
 ```{r}
 #| echo: false

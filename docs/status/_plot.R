@@ -87,6 +87,27 @@ readiness_chart <- function(assessments, shared = NULL) {
           customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
         )
     }
+    # on top of the not published, a dotted block the size of the published,
+    # so that the bars of this panel reach the total for the year
+    if (published == "Not published") {
+      d <- aggregate(list(key = I(bars$key)), bars[c("Year", "Published")], function(x) I(list(unlist(x))))
+      d$n <- lengths(d$key)
+      rest <- d[d$Published == "Not published", ]
+      d <- d[d$Published == "Published", ]
+      d$base <- ifelse(d$Year %in% rest$Year, rest$n[match(d$Year, rest$Year)], 0)
+      if (!is.null(shared)) d <- crosstalk::SharedData$new(d, key = ~key, group = shared$groupName())
+      p <- p |>
+        add_bars(
+          data = d,
+          x = ~Year, y = ~n, base = ~base,
+          name = "Published",
+          marker = list(
+            pattern = list(shape = ".", fgcolor = "#8a8984", bgcolor = "rgba(0,0,0,0)", size = 5, solidity = 0.4),
+            line = list(color = "#8a8984", width = 1)
+          ),
+          customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
+        )
+    }
     p |>
       layout(
         barmode = "overlay",
