@@ -1,21 +1,11 @@
-# TAF Architecture
-
-This document contains details on the design of TAF going forward from September 2026.
-
-
-### Document overview
-
-1. High-level business architecture
-2. Technical component architecture (for developers)
-3. Process flow
-4. TAF Analysis Explorer architecture (future vision)
-5. Strategic overview
-
-## 1. High-level business architecture
+---
+title: "High-level business architecture"
+order: 2
+---
 
 The stock assessment scientist is provided access to a github repository where they can work and develop thier stock assessment in the TAF format, refered to as `TAF Code`.  See [[TAF format]] for more details.  The TAF code is copied onto the TAF server
 
-```mermaid
+```{mermaid}
 flowchart TB
 
     U["Stock Assessment<br/>Scientist"]

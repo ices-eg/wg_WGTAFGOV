@@ -1,8 +1,11 @@
-## Process workflow
+---
+title: "Process workflow"
+order: 3
+---
 
 How does a piece of code become a plot, or a table of numbers browsable on the tafXplorer or downloadable through a url address?
 
-```mermaid
+```{mermaid}
 flowchart TD
 
     Commit["GitHub Commit: <code>plot(1:10,1:10)</code>"]
@@ -48,4 +51,4 @@ flowchart TD
 
     e10@{ animate: true }
     e11@{ animate: true }
-  ```
+```

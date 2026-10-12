@@ -1,0 +1,43 @@
+---
+title: "tafXplorer vision"
+order: 6
+---
+
+This is the diagram I would use when discussing the future direction of TAF with the governance group.
+
+
+```{mermaid}
+flowchart TB
+
+    Stakeholder[Stakeholder]
+
+    Explorer["TAF Explorer<br/>R Shiny"]
+
+    Metadata["(TAF Metadata DB)"]
+
+    Outputs["(TAF Outputs)"]
+
+    InputData[Input Data Tab]
+
+    Diagnostics[Model Diagnostics Tab]
+
+    Forecast[Forecast Diagnostics Tab]
+
+    QC[Quality Checks Tab]
+
+    Stakeholder --> Explorer
+
+    Explorer --> Metadata
+
+    Explorer --> Outputs
+
+    Explorer --> InputData
+    Explorer --> Diagnostics
+    Explorer --> Forecast
+    Explorer --> QC
+
+    InputData --> Outputs
+    Diagnostics --> Outputs
+    Forecast --> Outputs
+    QC --> Outputs
+```

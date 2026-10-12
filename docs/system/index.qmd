@@ -1,8 +1,9 @@
-## TAF architecture: Introduction
+---
+title: "TAF architecture: introduction"
+order: 1
+---
 
-#### Team composition
-
-The current TAF team is composed of a thematic lead (full time), developer (2 days), student developer (2 days), graphical data scientist (2 days), strategy coordinator (3 days), process (0.5 days), with additional support from the data managent team lead, and developer team lead.
+These pages describe the design of TAF going forward from September 2026.
 
 ## Core vision for TAF
 
@@ -10,7 +11,7 @@ The main goal for TAF in 2026/2027 is to have a process that achieves the follow
 
 The tafXplorer is envisaged to replace large portions of the current expert group reports, as it will be a place to view and reference data, results (plots and data).
 
-```mermaid
+```{mermaid}
 flowchart LR
 
     GitHub@{ shape: tag-doc, label: <code>Assessment Code</code>}
@@ -31,7 +32,7 @@ flowchart LR
     API --> Person
     API --> Explorer
     Explorer --> Person
-  ```
+```
 
 That is:
 

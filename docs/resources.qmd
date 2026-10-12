@@ -1,0 +1,20 @@
+---
+title: "Resources"
+---
+
+## Documents
+
+- [TAF Manifesto](https://htmlpreview.github.io/?https://github.com/ices-eg/wg_WGTAFGOV/blob/master/formatted_docs/taf_manifesto.html)
+- [TAF User Handbook](https://htmlpreview.github.io/?https://github.com/ices-eg/wg_WGTAFGOV/blob/master/formatted_docs/user_handbook.html)
+- [How to contribute](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/CONTRIBUTING.md)
+
+## Tracking
+
+- [Project board](https://github.com/orgs/ices-eg/projects/10)
+- [Issue tracker](https://github.com/ices-eg/wg_WGTAFGOV/issues)
+- [Raise a new issue](https://github.com/ices-eg/wg_WGTAFGOV/issues/new)
+
+## Working group
+
+- [WGTAFGOV on ices.dk](http://www.ices.dk/community/groups/Pages/WGTAFGOV.aspx)
+- [GitHub repository](https://github.com/ices-eg/wg_WGTAFGOV)

@@ -1,0 +1,32 @@
+---
+title: "TAF system documentation"
+toc: false
+---
+
+The Transparent Assessment Framework (TAF) is the ICES platform for recording, documenting and running the stock assessments and analyses that support scientific advice. This site describes how the system is designed, where it is heading, and how the work is progressing.
+
+{{< include _generated/summary.md >}}
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-4}
+### [System design](system/index.qmd)
+
+The architecture of TAF: the core vision, business architecture, process workflow and technical components.
+:::
+
+::: {.g-col-12 .g-col-md-4}
+### [Strategy](strategy/index.qmd)
+
+Goals for 2026/2027, the team, and the roadmap of workstreams.
+:::
+
+::: {.g-col-12 .g-col-md-4}
+### [Progress](progress.qmd)
+
+Issue status by workstream and area, updated automatically from GitHub.
+:::
+
+:::
+
+Day-to-day task status lives on the [TAFGOV and TAF team project board](https://github.com/orgs/ices-eg/projects/10). Requests and bug reports go to the [issue tracker](https://github.com/ices-eg/wg_WGTAFGOV/issues).

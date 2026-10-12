@@ -1,0 +1,9 @@
+/* Progress tables and bars written by _scripts/progress.R */
+.taf-progress td, .taf-progress th { vertical-align: middle; }
+.taf-progress .progress { min-width: 8rem; height: 0.9rem; }
+.taf-progress .num { text-align: right; white-space: nowrap; }
+.taf-bar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.taf-bar .progress { flex: 1; height: 0.9rem; }
+.taf-bar .taf-bar-label { white-space: nowrap; font-size: 0.9rem; }
+.taf-updated { color: var(--bs-secondary-color); font-size: 0.9rem; }
+.taf-issues { padding-left: 1.2rem; }

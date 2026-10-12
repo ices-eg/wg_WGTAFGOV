@@ -1,0 +1,148 @@
+---
+title: "Technical overview of the whole TAF process"
+order: 5
+---
+
+
+
+```{mermaid}
+flowchart LR
+
+    %% USERS
+
+    Scientist["Stock Assessors<br/>Scientists"]
+
+    Reviewer[Reviewers]
+
+    Stakeholder["Customers<br/>Stakeholders"]
+
+
+
+    %% SOURCE CONTROL
+
+    subgraph GitHub
+        Repo[TAF Assessment Repositories]
+    end
+
+
+
+    %% INGESTION
+
+    subgraph Repository_Management
+        Sync[Repository Synchronisation Service]
+        Storage["Repository Storage<br/>File System or Azure Blob Storage"]
+    end
+
+
+
+    %% PROCESSING
+
+    subgraph Processing_Platform
+
+        Validation["Validation Service<br/>TAF Structure & Standards Checks"]
+
+        Execute["Execution Service<br/>Run Assessment Workflow"]
+
+        Runtime["Container Runtime<br/>Docker / Azure Containers"]
+
+    end
+
+
+
+    %% DATA
+
+    subgraph Data_Platform
+
+        Metadata["(Metadata Database)"]
+
+        Outputs["(Assessment Outputs)"]
+
+    end
+
+
+
+    %% WEB APPLICATIONS
+
+    subgraph User_Services
+
+        Angular[Angular Portal]
+
+        API[ASP.NET Core API]
+
+        Explorer["TAF Explorer<br/>R Shiny"]
+
+    end
+
+
+
+    %% REPOSITORY LIFECYCLE
+
+    Scientist --> Repo
+
+    Repo --> Sync
+
+    Sync --> Storage
+
+    Storage --> Validation
+
+    Storage --> Execute
+
+    Execute --> Runtime
+
+
+
+    %% VALIDATION
+
+    Validation -->|Validation Status| Metadata
+
+
+
+    %% EXECUTION
+
+    Execute -->|Run Metadata| Metadata
+
+    Execute -->|Plots| Outputs
+    Execute -->|Tables| Outputs
+    Execute -->|PDF Reports| Outputs
+    Execute -->|Derived Data| Outputs
+
+
+
+    %% PORTAL
+
+    Scientist --> Angular
+    Reviewer --> Angular
+
+    Angular --> API
+
+    API --> Metadata
+    API --> Outputs
+
+
+
+    %% EXPLORER
+
+    Stakeholder --> Explorer
+
+    Explorer --> Metadata
+    Explorer --> Outputs
+
+
+
+    %% EXPLORER CONTENT
+
+    Explorer --- InputData[Input Data]
+    Explorer --- ModelDiag[Model Diagnostics]
+    Explorer --- ForecastDiag[Forecast Diagnostics]
+    Explorer --- QualityChecks[Quality Checks]
+
+
+
+    %% METADATA CONTENT
+
+    Metadata --- RepoURL[GitHub URL]
+    Metadata --- RepoPath[Repository Location]
+    Metadata --- Species[Species Code]
+    Metadata --- Year[Assessment Year]
+    Metadata --- ValidationState[Validation Status]
+```

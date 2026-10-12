@@ -1,0 +1,51 @@
+project:
+  type: website
+
+website:
+  title: "TAF system documentation"
+  site-url: https://ices-eg.github.io/wg_WGTAFGOV/
+  repo-url: https://github.com/ices-eg/wg_WGTAFGOV
+  repo-subdir: docs
+  repo-branch: master
+  repo-actions: [edit, issue]
+  page-navigation: true
+  navbar:
+    left:
+      - text: System design
+        href: system/index.qmd
+      - text: Strategy
+        href: strategy/index.qmd
+      - text: Progress
+        href: progress.qmd
+      - text: Resources
+        href: resources.qmd
+    right:
+      - text: Project board
+        href: https://github.com/orgs/ices-eg/projects/10
+      - icon: github
+        href: https://github.com/ices-eg/wg_WGTAFGOV
+        aria-label: GitHub repository
+  sidebar:
+    - title: System design
+      style: docked
+      contents:
+        - system/index.qmd
+        - system/business.qmd
+        - system/process-workflow.qmd
+        - system/technical-layers.qmd
+        - system/technical-overview.qmd
+        - system/tafxplorer.qmd
+    - title: Strategy
+      contents:
+        - strategy/index.qmd
+        - strategy/roadmap.qmd
+  page-footer:
+    center: "ICES Working Group on the Transparent Assessment Framework Governance (WGTAFGOV)"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    mermaid:
+      theme: neutral

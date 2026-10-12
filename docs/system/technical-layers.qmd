@@ -1,0 +1,89 @@
+---
+title: "Technical component layers"
+order: 4
+---
+
+
+```{mermaid}
+flowchart TB
+
+    subgraph User Layer
+        Scientist[Scientists]
+        Reviewer[Reviewers]
+        Stakeholder[Stakeholders]
+    end
+
+    subgraph Source Control
+        GitHub[GitHub Repositories]
+    end
+
+    subgraph Repository Management
+        Sync[Repository Sync Service]
+        Storage["Repository Store<br/>File System / Azure Blob"]
+    end
+
+    subgraph Processing Layer
+
+        Validation[TAF Validation Engine]
+
+        Execution[TAF Execution Engine]
+
+        Containers["Container Runtime<br/>Docker / Azure Containers"]
+
+    end
+
+    subgraph Application Layer
+
+        Angular[Angular Portal]
+
+        API[ASP.NET Core API]
+
+    end
+
+    subgraph Data Layer
+
+        Metadata["(Metadata Database)"]
+
+        OutputStore["(Output Repository)"]
+
+    end
+
+    subgraph Discovery Layer
+
+        Explorer["TAF Explorer<br/>R Shiny"]
+
+    end
+
+
+    Scientist --> GitHub
+
+    GitHub --> Sync
+
+    Sync --> Storage
+
+    Storage --> Validation
+
+    Storage --> Execution
+
+    Execution --> Containers
+
+    Validation --> Metadata
+
+    Execution --> Metadata
+
+    Execution --> OutputStore
+
+    Angular --> API
+
+    API --> Metadata
+
+    API --> OutputStore
+
+    Scientist --> Angular
+    Reviewer --> Angular
+
+    Explorer --> Metadata
+    Explorer --> OutputStore
+
+    Stakeholder --> Explorer
+```
