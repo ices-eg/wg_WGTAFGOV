@@ -4,8 +4,9 @@
 #
 # Reads the repository lists of the ices-taf and ices-advice organisations
 # with the GitHub CLI, the stock codes from the ICES vocabulary (icesVocab),
-# the QC results from the taf-qc-dashboard repository and the stock list from
-# the ICES Stock Database. Most
+# the QC results from the taf-qc-dashboard repository, the stock list from
+# the ICES Stock Database and the advice sheets from _data/advice-sheets.csv.
+# Most
 # ices-taf repositories are private, so `gh` must be authenticated as someone
 # who can read them (in GitHub Actions: the TAF_STATUS_TOKEN secret), otherwise
 # only the public repositories are counted.
@@ -34,6 +35,15 @@ stock_parts <- c("west", "south")
 
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
+
+# the advice sheets and the GitHub links in them, updated by _scripts/advice.R
+sheets_file <- "_data/advice-sheets.csv"
+sheets_first_year <- 2024
+# what can be said of the link in an advice sheet, the most serious first
+link_statuses <- c(
+  "Links to ices-taf", "Links elsewhere", "Repository not public",
+  "Wrong stock or year", "Malformed link", "OK"
+)
 
 # QC results, one entry for each repository tested, named ices-taf_<name>
 qc_url <- "https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/main/json/master.json"
@@ -194,6 +204,55 @@ qc_results <- function(names) {
   )
 }
 
+# the current advice sheet of each stock and year, with what can be said of
+# the links to GitHub in it. The published code of a stock is in a public
+# repository named <year>_<stock code> in ices-advice, so that is where the
+# sheet should link to: ices-taf is where the work is done, and is private.
+advice_sheets <- function(advice_repos) {
+  sheets <- read.csv(sheets_file, colClasses = "character", na.strings = "NA")
+  sheets$year <- as.numeric(sheets$year)
+  sheets <- sheets[sheets$year %in% sheets_first_year:9999 & !is.na(sheets$stock), ]
+  # a sheet can be replaced during the year: keep the latest
+  sheets <- sheets[order(sheets$published, sheets$id), ]
+  sheets <- sheets[!duplicated(sheets[c("stock", "year")], fromLast = TRUE), ]
+
+  public <- tolower(advice_repos$name[advice_repos$visibility == "public"])
+
+  link_status <- function(link, stock, year) {
+    part <- regmatches(link, regexec("github[.]com/(ices-[A-Za-z-]+)/?([A-Za-z0-9_.-]*)", link, ignore.case = TRUE))[[1]]
+    org <- tolower(part[2])
+    repo <- tolower(sub("[.](git)?$", "", part[3]))
+    if (org %in% "ices-taf") {
+      "Links to ices-taf"
+    } else if (!org %in% "ices-advice") {
+      "Links elsewhere"
+    } else if (!repo %in% public) {
+      "Repository not public"
+    } else if (!startsWith(repo, tolower(paste0(year, "_", stock)))) {
+      "Wrong stock or year"
+    } else if (!grepl("^https?://(www[.])?github[.]com/", link, ignore.case = TRUE)) {
+      "Malformed link"
+    } else {
+      "OK"
+    }
+  }
+
+  sheets$status <- vapply(seq_len(nrow(sheets)), function(i) {
+    if (is.na(sheets$links[i])) {
+      return("Not checked")
+    }
+    links <- strsplit(sheets$links[i], " | ", fixed = TRUE)[[1]]
+    if (!length(links)) {
+      # nothing linked: is there something that should have been?
+      has_repo <- any(startsWith(public, tolower(paste0(sheets$year[i], "_", sheets$stock[i]))))
+      return(if (has_repo) "Repository not linked" else "No link")
+    }
+    status <- vapply(links, link_status, "", stock = sheets$stock[i], year = sheets$year[i])
+    link_statuses[min(match(status, link_statuses))]
+  }, "")
+  sheets
+}
+
 category <- function(data_category) {
   x <- floor(suppressWarnings(as.numeric(data_category)))
   ifelse(x < 2, "Category 1", "Categories 2-6")
@@ -237,12 +296,24 @@ build <- function() {
   taf_repos$published <-
     sub("_assessment$", "", taf_repos$name) %in% advice$name |
     paste(taf_repos$year, taf_repos$stock, sep = "_") %in% advice$name
+  # the advice sheet of each stock and year. Read by status/advice-sheets.qmd
+  sheets <- advice_sheets(advice)
+  write.csv(
+    sheets[order(sheets$year, sheets$stock), c("year", "stock", "title", "published", "doi", "url", "links", "status")],
+    file.path(out_dir, "advice-sheets.csv"),
+    row.names = FALSE
+  )
+  i <- match(paste(taf_repos$stock, taf_repos$year), paste(sheets$stock, sheets$year))
+  taf_repos$advice_url <- sheets$url[i]
+  taf_repos$advice_status <- sheets$status[i]
+  message(nrow(sheets), " advice sheets, ", sum(sheets$status == "OK"), " with a link that is OK")
+
   # read by status/readiness.qmd, and for checking locally: _generated/ is
   # not committed or published
   write.csv(
     taf_repos[
       order(taf_repos$year, taf_repos$stock),
-      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "qc_tested", "qc_passed", "qc_date", "trl", "published")
+      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "qc_tested", "qc_passed", "qc_date", "trl", "published", "advice_url", "advice_status")
     ],
     file.path(out_dir, "taf-repos.csv"),
     row.names = FALSE

@@ -1,0 +1,38 @@
+name: UpdateAdvice
+on:
+  workflow_dispatch:
+  schedule:
+    # weekly: new advice sheets, and the links to GitHub in them
+    - cron: '0 2 * * 1'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+      with:
+        use-public-rspm: true
+
+    - name: Install R dependencies
+      run: Rscript -e 'install.packages(c("jsonlite", "curl", "icesVocab"))'
+
+    - name: read new advice sheets from the ICES library
+      run: Rscript _scripts/advice.R
+      working-directory: docs
+
+    # the site picks this up at its next build
+    - name: commit the advice sheets
+      run: |
+        git config --local user.email "github@ices.dk"
+        git config --local user.name "ices-github-bot"
+        git add docs/_data/advice-sheets.csv
+        git diff --cached --quiet || git commit -m "Update advice sheets"
+        git push

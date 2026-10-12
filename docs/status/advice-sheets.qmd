@@ -1,0 +1,144 @@
+---
+title: "Advice sheets"
+---
+
+Whether the advice sheet of each stock links to its TAF code, and whether the link is right.
+
+The published code of a stock is in a public repository in [ices-advice](https://github.com/ices-advice), named for the year and the stock, so that is where an advice sheet should link to. The repositories in [ices-taf](https://github.com/ices-taf) are where the work is done, and most are private: a link to one is a mistake, as readers of the advice cannot open it.
+
+The advice sheets are those from 2024 on in the [ICES library](https://ices-library.figshare.com), read once a week. Where the advice for a stock was replaced during the year, the latest sheet is used.
+
+::: {.callout-tip icon=false}
+Admins can rerun the update action here: [UpdateAdvice](https://github.com/ices-eg/wg_WGTAFGOV/actions/workflows/update-advice.yml). Choose **Run workflow**; the new advice sheets appear on this page after the site is next built.
+:::
+
+```{r}
+#| include: false
+source("_plot.R")
+
+sheets <- read.csv("../_generated/advice-sheets.csv")
+
+# what was found, with the problems first
+statuses <- c(
+  "Links to ices-taf" = "The link is to a repository in ices-taf, which readers cannot open.",
+  "Links elsewhere" = "The link is to a repository in another organisation.",
+  "Repository not public" = "The repository linked to in ices-advice does not exist, or is private.",
+  "Wrong stock or year" = "The link is to the repository of another stock or year.",
+  "Malformed link" = "The link is to the right repository, but has something else in it.",
+  "Repository not linked" = "There is a repository in ices-advice for the stock and year, but the advice sheet does not link to it.",
+  "OK" = "The link is to the public repository in ices-advice for the stock and year.",
+  "No link" = "The advice sheet has no link to GitHub, and there is no repository in ices-advice.",
+  "Not checked" = "The advice sheet has not been looked at yet."
+)
+colours <- c(
+  "Links to ices-taf" = "#d03b3b", "Links elsewhere" = "#6250d6", "Repository not public" = "#ec835a",
+  "Wrong stock or year" = "#eda100", "Malformed link" = "#e87ba4", "Repository not linked" = "#8a8984",
+  "OK" = "#3987e5", "No link" = "#e3e2dd", "Not checked" = "#f4f3f0"
+)
+problems <- setdiff(names(statuses), c("OK", "No link", "Not checked"))
+sheets$status <- factor(sheets$status, names(statuses))
+found <- levels(droplevels(sheets$status))
+
+latest <- sheets[sheets$year == max(sheets$year), ]
+```
+
+::: {.callout-note icon=false}
+## Current status
+
+Of the `r nrow(sheets)` advice sheets since `r min(sheets$year)`, **`r sum(sheets$status == "OK")` link to the published code** of their stock. **`r sum(sheets$status %in% problems)` have a problem with the link**, of which `r sum(sheets$status == "Links to ices-taf")` link to ices-taf by mistake. In `r max(sheets$year)`, `r sum(latest$status == "OK")` of the `r nrow(latest)` advice sheets link to the published code and `r sum(latest$status %in% problems)` have a problem.
+:::
+
+## What was found
+
+```{r}
+#| echo: false
+knitr::kable(
+  data.frame(
+    Status = found,
+    "Advice sheets" = as.vector(table(sheets$status)[found]),
+    Meaning = unname(statuses[found]),
+    check.names = FALSE
+  ),
+  align = "lrl"
+)
+```
+
+## Advice sheets by year
+
+Click a bar to list its advice sheets in the table below. To show them all again, use the button above the table or double-click the chart.
+
+```{r}
+#| echo: false
+# the advice sheets, shared by the chart and the table so that clicking a bar
+# filters the table
+link <- function(url, text) sprintf("<a href=\"%s\">%s</a>", url, htmltools::htmlEscape(text))
+links <- vapply(strsplit(ifelse(is.na(sheets$links), "", sheets$links), " | ", fixed = TRUE), function(x) {
+  # show the link as it is written in the advice sheet
+  paste(htmltools::htmlEscape(x), collapse = "<br>")
+}, "")
+listed <- data.frame(
+  Year = as.character(sheets$year),
+  Stock = sheets$stock,
+  "Advice sheet" = link(sheets$url, sheets$title),
+  Status = sheets$status,
+  "Link in the advice sheet" = links,
+  # not shown: puts the table in the order of the statuses above
+  rank = as.numeric(sheets$status),
+  check.names = FALSE
+)
+shared <- crosstalk::SharedData$new(listed)
+
+# the bars: the number of advice sheets by year and status, stacked by hand so
+# that a clicked bar is highlighted in place. Each bar carries the keys of its
+# advice sheets, which is what links it to the rows of the table.
+bars <- aggregate(list(key = shared$key()), listed[c("Status", "Year")], function(x) I(list(x)))
+bars$n <- lengths(bars$key)
+bars <- bars[order(bars$Year, bars$Status), ]
+bars$base <- ave(bars$n, bars$Year, FUN = function(n) cumsum(n) - n)
+
+p <- plot_ly()
+for (status in found) {
+  p <- p |>
+    add_bars(
+      data = crosstalk::SharedData$new(bars[bars$Status == status, ], key = ~key, group = shared$groupName()),
+      x = ~Year, y = ~n, base = ~base, name = status,
+      marker = list(color = colours[[status]], line = list(color = "white", width = 2)),
+      customdata = ~n, hovertemplate = "%{x}: %{customdata} advice sheets"
+    )
+}
+p |>
+  taf_layout(
+    barmode = "overlay",
+    xaxis = list(title = "", categoryorder = "category ascending"),
+    yaxis = list(title = "Advice sheets")
+  ) |>
+  layout(legend = list(y = -0.12, traceorder = "normal")) |>
+  highlight(
+    on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
+    selected = attrs_selected(showlegend = FALSE)
+  ) |>
+  config(doubleClickDelay = 1000)
+```
+
+## Advice sheets
+
+The advice sheets with a problem are first.
+
+```{r}
+#| echo: false
+show_all_button(shared, "Show all advice sheets")
+```
+
+```{r}
+#| echo: false
+# sort by status, in the order above, then the latest year first
+DT::datatable(
+  shared,
+  rownames = FALSE, escape = FALSE,
+  options = list(
+    pageLength = 25,
+    order = list(list(5, "asc"), list(0, "desc"), list(1, "asc")),
+    columnDefs = list(list(visible = FALSE, targets = 5))
+  )
+)
+```

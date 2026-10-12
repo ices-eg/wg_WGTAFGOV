@@ -48,6 +48,7 @@ website:
         - status/index.qmd
         - status/stock-assessments.qmd
         - status/readiness.qmd
+        - status/advice-sheets.qmd
   page-footer:
     center: "ICES Working Group on the Transparent Assessment Framework Governance (WGTAFGOV)"
 
