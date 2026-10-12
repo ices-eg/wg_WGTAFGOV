@@ -14,9 +14,12 @@ stocks <- read.csv("../_generated/stocks-by-year.csv")
 stocks$category <- factor(stocks$category, c("Category 1", "Categories 2-6"))
 stocks <- stocks[order(stocks$year, stocks$category), ]
 
+# nothing to show if no assessment could be read, see _scripts/status.R
+has_data <- any(stocks$taf > 0)
+
 # the years since the first with an assessment implemented in TAF
 years <- sort(unique(stocks$year))
-years <- years[years >= min(stocks$year[stocks$taf > 0])]
+if (has_data) years <- years[years >= min(stocks$year[stocks$taf > 0])]
 stocks <- stocks[stocks$year %in% years, ]
 
 # as in the dashboard: show last year's assessments until August
@@ -25,12 +28,15 @@ start <- today$year + 1900 - (today$mon < 7)
 if (!start %in% years) start <- max(years)
 ```
 
+`r if (!has_data) "::: {.callout-warning}\nNo stock assessments implemented in TAF could be read when this page was built, so the charts are not shown.\n:::"`
+
 ## Stocks implemented in TAF
 
 Choose the year with the menu above the chart.
 
 ```{r}
 #| echo: false
+#| eval: !expr has_data
 p <- plot_ly()
 for (year in years) {
   p <- p |>
@@ -75,6 +81,7 @@ The number of stocks implemented in TAF for each expert group, and the percentag
 
 ```{r}
 #| echo: false
+#| eval: !expr has_data
 groups <- read.csv("../_generated/stocks-by-eg.csv")
 groups <- groups[groups$year %in% years, ]
 groups$cell <- sprintf("%d (%.1f%%)", groups$n, groups$percent)
@@ -100,6 +107,7 @@ knitr::kable(wide, row.names = FALSE, align = c("l", rep("r", ncol(wide) - 1)))
 
 ```{r}
 #| echo: false
+#| eval: !expr has_data
 stocks$percent <- 100 * stocks$taf / stocks$stocks
 
 plot_ly(
