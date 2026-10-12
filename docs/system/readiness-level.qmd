@@ -17,7 +17,7 @@ The levels build on each other. An assessment can only reach level 2 after reach
 
 ### Level 1: code on GitHub
 
-The assessment has a repository in the [ices-taf](https://github.com/ices-taf) organisation containing its code.
+The assessment has a repository in the [ices-taf](https://github.com/ices-taf) organisation containing its code. This is checked by looking for model scripts in the repository, `model.R`, any scripts named `model_*.R` and any R Markdown files named `model*.Rmd`, with more in them than the empty `model.R` a new TAF repository starts with.
 
 ### Level 2: passes the QC test
 

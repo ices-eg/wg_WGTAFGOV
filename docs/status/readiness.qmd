@@ -24,7 +24,7 @@ There are `r nrow(repos)` stock assessment repositories.
 - `r at_least(1)` have reached level 1, with their code on GitHub.
 - `r at_least(2)` of those have reached level 2, passing the QC test. `r untested` of the repositories at level 1 have not been tested.
 - None has been tested for level 3 yet.
-- `r n[["No level"]]` have no level, because they have no `model.R` script or only an empty one.
+- `r n[["No level"]]` have no level, because they have no model scripts (`model.R`, `model_*.R` or `model*.Rmd`), or only an empty `model.R`.
 
 `r sum(repos$published)` of the repositories are for stocks published in [ices-advice](https://github.com/ices-advice): `r sum(repos$published & repos$trl %in% 2)` at level 2, `r sum(repos$published & repos$trl %in% 1)` at level 1 and `r sum(repos$published & is.na(repos$trl))` with no level.
 

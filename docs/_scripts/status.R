@@ -159,7 +159,9 @@ taf_assessments <- function(repos, stock_codes) {
 }
 
 # size in bytes of the model scripts at the top level of each repository:
-# model.R itself (NA if there is none) and all of model.R, model_*.R together
+# model.R itself (NA if there is none), and together model.R, the scripts
+# named model_*.R and the R Markdown files named model*.Rmd. An assessment
+# may have no model.R, only the others.
 model_scripts <- function(names, owner = "ices-taf") {
   out <- data.frame(model_r = rep(NA_real_, length(names)), model_size = 0)
   # a few repositories per request: GitHub times out on large queries
@@ -190,8 +192,8 @@ model_scripts <- function(names, owner = "ices-taf") {
       size <- vapply(files, function(f) as.numeric(f$object$byteSize), 1)
       if (any(tolower(file) == "model.r")) {
         out$model_r[i] <- sum(size[tolower(file) == "model.r"])
-        out$model_size[i] <- sum(size[grepl("^model.*[.]r$", tolower(file))])
       }
+      out$model_size[i] <- sum(size[grepl("^model(_.*)?[.]r$|^model.*[.]rmd$", tolower(file))])
     }
   }
   out
@@ -337,8 +339,8 @@ build <- function() {
   # the TAF stock assessment repositories
   taf_repos <- taf_assessments(repos, stock_codes)
   # TAF readiness level, see system/readiness-level.qmd
-  # level 1: the code is on GitHub, a model.R script with more than the TAF
-  # skeleton in it
+  # level 1: the code is on GitHub, with more in model.R, the model_*.R
+  # scripts and the model*.Rmd files than the TAF skeleton
   taf_repos <- cbind(taf_repos, cached_model_scripts(taf_repos))
   taf_repos$has_model <- taf_repos$model_size > min_model_size
   taf_repos$trl <- ifelse(taf_repos$has_model, 1, NA)
