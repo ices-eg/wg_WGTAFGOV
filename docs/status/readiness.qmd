@@ -6,7 +6,7 @@ The [TAF readiness level](../system/readiness-level.qmd) of the stock assessment
 
 ```{r}
 #| include: false
-library(plotly)
+source("_plot.R")
 
 repos <- read.csv("../_generated/taf-repos.csv")
 
@@ -78,7 +78,7 @@ There are `r nrow(repos)` stock assessment repositories.
 
 The QC results are from `r format(as.Date(max(repos$qc_date, na.rm = TRUE)), "%e %B %Y")`.
 
-Click a bar to list its assessments in the table below. Double-click the chart to show them all again.
+Click a bar to list its assessments in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}
 #| echo: false
@@ -100,7 +100,12 @@ subplot(panel("Published", TRUE), panel("Not published", FALSE), shareY = TRUE, 
     on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
     selected = attrs_selected(showlegend = FALSE)
   ) |>
-  config(displayModeBar = FALSE)
+  config(displayModeBar = FALSE, doubleClickDelay = 1000)
+```
+
+```{r}
+#| echo: false
+show_all_button(shared, "Show all assessments")
 ```
 
 ```{r}

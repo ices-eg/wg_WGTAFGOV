@@ -47,7 +47,7 @@ plot_ly(
 
 The type is the last part of the repository name, `<year>_<name>_<type>`, for the repositories named for a year. Stock repositories without a type are counted as assessments, as are those for a part of a stock, `<year>_<stock>_<west or south>`.
 
-Click a bar to list the repositories of that type in the table below. Double-click the chart to show them all again.
+Click a bar to list the repositories of that type in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}
 #| echo: false
@@ -84,12 +84,18 @@ plot_ly(
   highlight(
     on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
     selected = attrs_selected(showlegend = FALSE)
-  )
+  ) |>
+  config(doubleClickDelay = 1000)
 ```
 
 ## Repositories
 
 All the repositories, most recently updated first. Those marked with a lock are private, so their links only work for members of the organisation.
+
+```{r}
+#| echo: false
+show_all_button(shared, "Show all repositories")
+```
 
 ```{r}
 #| echo: false
