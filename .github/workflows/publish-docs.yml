@@ -37,8 +37,19 @@ jobs:
       with:
         use-public-rspm: true
 
+    # installs the packages once, then restores them from a cache
     - name: Install R dependencies
-      run: Rscript -e 'install.packages(c("jsonlite", "icesVocab", "knitr", "rmarkdown", "plotly", "DT"))'
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        packages: |
+          any::jsonlite
+          any::icesVocab
+          any::knitr
+          any::rmarkdown
+          any::plotly
+          any::DT
+          any::crosstalk
+          any::htmltools
 
     - name: read issue status from GitHub
       run: Rscript _scripts/progress.R

@@ -22,8 +22,14 @@ jobs:
       with:
         use-public-rspm: true
 
+    # installs the packages once, then restores them from a cache
     - name: Install R dependencies
-      run: Rscript -e 'install.packages(c("jsonlite", "curl", "icesVocab"))'
+      uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        packages: |
+          any::jsonlite
+          any::curl
+          any::icesVocab
 
     - name: read new advice sheets from the ICES library
       run: Rscript _scripts/advice.R
