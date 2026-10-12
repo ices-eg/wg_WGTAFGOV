@@ -1,53 +1,124 @@
 ---
 title: "Stock assessments"
-resources:
-  - taf-status.js
-include-in-header:
-  text: |
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
-include-after-body:
-  text: |
-    <script src="taf-status.js"></script>
 ---
 
 How many of the stocks ICES gives advice on have their assessment in TAF, linked to the advice.
 
 A stock counts as implemented in TAF for a year when it has a repository in [ices-advice](https://github.com/ices-advice) for that year, and the matching `_assessment` repository in [ices-taf](https://github.com/ices-taf) contains a `model.R` script. The number of stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk).
 
+```{r}
+#| include: false
+source("_plot.R")
+
+stocks <- read.csv("../_generated/stocks-by-year.csv")
+stocks$category <- factor(stocks$category, c("Category 1", "Categories 2-6"))
+stocks <- stocks[order(stocks$year, stocks$category), ]
+
+# the years since the first with an assessment implemented in TAF
+years <- sort(unique(stocks$year))
+years <- years[years >= min(stocks$year[stocks$taf > 0])]
+stocks <- stocks[stocks$year %in% years, ]
+
+# as in the dashboard: show last year's assessments until August
+today <- as.POSIXlt(Sys.Date())
+start <- today$year + 1900 - (today$mon < 7)
+if (!start %in% years) start <- max(years)
+```
+
 ## Stocks implemented in TAF
 
-::: {.taf-filter}
-<label for="taf-year">Year</label>
-<select id="taf-year" class="form-select form-select-sm"></select>
-:::
+Choose the year with the menu above the chart.
 
-::: {.grid}
+```{r}
+#| echo: false
+p <- plot_ly()
+for (year in years) {
+  p <- p |>
+    add_bars(
+      data = stocks[stocks$year == year, ],
+      x = ~category, y = ~stocks,
+      name = "Stocks", marker = list(color = blue), visible = year == start,
+      hovertemplate = "%{x}: %{y} stocks<extra></extra>"
+    ) |>
+    add_bars(
+      data = stocks[stocks$year == year, ],
+      x = ~category, y = ~taf,
+      name = "Stocks implemented in TAF", marker = list(color = orange), visible = year == start,
+      hovertemplate = "%{x}: %{y} implemented in TAF<extra></extra>"
+    )
+}
 
-::: {.g-col-12 .g-col-lg-8}
-::: {#taf-stocks .taf-chart}
-:::
-:::
+# one menu entry for each year, showing its two sets of bars
+year_menu <- list(
+  active = which(years == start) - 1,
+  x = 1, xanchor = "right", y = 1.12, yanchor = "bottom",
+  buttons = lapply(years, function(year) {
+    list(
+      method = "restyle", label = as.character(year),
+      args = list("visible", as.list(rep(years == year, each = 2)))
+    )
+  })
+)
 
-::: {.g-col-12 .g-col-lg-4}
-**Stocks by expert group, [ ]{.taf-year-label}**
-
-```{=html}
-<table class="table table-sm taf-progress" id="taf-eg">
-<thead><tr><th>Expert group</th><th class="num">Count</th><th class="num">Coverage</th></tr></thead>
-<tbody></tbody>
-</table>
+p |>
+  taf_layout(
+    barmode = "group",
+    xaxis = list(title = ""),
+    yaxis = list(title = "Count"),
+    updatemenus = list(year_menu)
+  )
 ```
-:::
 
-:::
+## Stocks by expert group
+
+The number of stocks implemented in TAF for each expert group, and the percentage of the group's stocks that is.
+
+```{r}
+#| echo: false
+groups <- read.csv("../_generated/stocks-by-eg.csv")
+groups <- groups[groups$year %in% years, ]
+groups$cell <- sprintf("%d (%.1f%%)", groups$n, groups$percent)
+
+wide <- reshape(
+  groups[c("eg", "year", "cell")],
+  idvar = "eg", timevar = "year", direction = "wide"
+)
+names(wide) <- sub("^cell[.]", "", names(wide))
+names(wide)[1] <- "Expert group"
+wide <- wide[c("Expert group", as.character(sort(unique(groups$year))))]
+wide[is.na(wide)] <- ""
+
+# most covered in the latest year first
+latest <- groups[groups$year == max(groups$year), ]
+covered <- latest$percent[match(wide[[1]], latest$eg)]
+wide <- wide[order(-ifelse(is.na(covered), -1, covered), wide[[1]]), ]
+
+knitr::kable(wide, row.names = FALSE, align = c("l", rep("r", ncol(wide) - 1)))
+```
 
 ## Percentage of stocks with TAF assessments linked to advice
 
-::: {#taf-stocks-trend .taf-chart}
-:::
+```{r}
+#| echo: false
+stocks$percent <- 100 * stocks$taf / stocks$stocks
+
+plot_ly(
+  stocks,
+  x = ~year, y = ~percent, color = ~category, colors = c(blue, orange),
+  type = "scatter", mode = "lines+markers",
+  line = list(width = 2), marker = list(size = 8),
+  customdata = ~paste(taf, "of", stocks),
+  hovertemplate = "%{x}: %{y:.1f}% (%{customdata} stocks)"
+) |>
+  taf_layout(
+    xaxis = list(title = "", dtick = 1),
+    yaxis = list(
+      title = "Percentage of stocks", ticksuffix = "%",
+      range = c(0, ceiling(max(stocks$percent) / 10) * 10 + 2)
+    )
+  )
+```
 
 ## Data
 
 {{< include ../_generated/status-stocks-table.md >}}
-
-{{< include ../_generated/status-data.md >}}

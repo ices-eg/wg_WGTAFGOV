@@ -41,6 +41,10 @@ qc_url <- "https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/ma
 # the file is there but not valid, which does not.
 qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
+dir.create(out_dir, showWarnings = FALSE)
+
+fragments <- c("status-summary", "status-public-repos", "status-stocks-table")
+
 # ---- helpers ---------------------------------------------------------------
 
 write_html <- function(name, html) {
@@ -356,18 +360,14 @@ build <- function() {
     )
   }
 
-  data <- list(
-    repos_by_year = tally(dated, "year", "n"),
-    repos_by_type = types,
-    stocks_by_year = by_year,
-    stocks_by_eg = by_eg
-  )
-  json <- jsonlite::toJSON(data, dataframe = "rows", auto_unbox = TRUE)
-  write_html("status-data", c(
-    "<script type=\"application/json\" id=\"taf-status-data\">",
-    gsub("</", "<\\/", json, fixed = TRUE),
-    "</script>"
-  ))
+  # read by the R code in status/index.qmd and status/stock-assessments.qmd
+  write_data <- function(x, name) {
+    write.csv(x, file.path(out_dir, paste0(name, ".csv")), row.names = FALSE)
+  }
+  write_data(tally(dated, "year", "n"), "repos-by-year")
+  write_data(types, "repos-by-type")
+  write_data(by_year, "stocks-by-year")
+  write_data(by_eg, "stocks-by-eg")
 }
 
 result <- tryCatch(build(), error = function(e) e)
