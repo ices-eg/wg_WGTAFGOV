@@ -45,6 +45,13 @@ readiness_assessments <- function(repos) {
     QC = ifelse(!repos$qc_tested, "Not tested", ifelse(repos$qc_passed, "Passed", "Failed"))
   )
   names(assessments)[5] <- "QC test"
+  # what was found of the link in the advice sheet of the stock and year, see
+  # status/advice-sheets.qmd, going to the advice sheet. There are advice
+  # sheets from 2024 on.
+  assessments[["Advice link"]] <- ifelse(
+    is.na(repos$advice_status), "",
+    sprintf("<a href=\"%s\">%s</a>", repos$advice_url, repos$advice_status)
+  )
   assessments
 }
 

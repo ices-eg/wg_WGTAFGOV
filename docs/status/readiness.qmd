@@ -30,6 +30,8 @@ There are `r nrow(repos)` stock assessment repositories.
 
 The QC results are from `r format(as.Date(max(repos$qc_date, na.rm = TRUE)), "%e %B %Y")`.
 
+The last column of the table is what was found of the link to GitHub in the [advice sheet](advice-sheets.qmd) of the stock, for the advice from 2024 on.
+
 Click a bar to list its assessments in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}
@@ -44,5 +46,9 @@ show_all_button(shared, "Show all assessments")
 
 ```{r}
 #| echo: false
-DT::datatable(shared, rownames = FALSE, options = list(pageLength = 25, order = list(list(0, "desc"), list(1, "asc"))))
+DT::datatable(
+  shared,
+  rownames = FALSE, escape = FALSE,
+  options = list(pageLength = 25, order = list(list(0, "desc"), list(1, "asc")))
+)
 ```

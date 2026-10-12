@@ -22,17 +22,17 @@ sheets <- read.csv("../_generated/advice-sheets.csv")
 statuses <- c(
   "Links to ices-taf" = "The link is to a repository in ices-taf, which readers cannot open.",
   "Links elsewhere" = "The link is to a repository in another organisation.",
-  "Repository not public" = "The repository linked to in ices-advice does not exist, or is private.",
-  "Wrong stock or year" = "The link is to the repository of another stock or year.",
-  "Malformed link" = "The link is to the right repository, but has something else in it.",
+  "Wrong repository" = "The link is not to the repository of the stock and year: it is to another year or stock, or the name is mistyped.",
+  "Repository not public" = "The link is to the repository of the stock and year, but it does not exist or is private.",
+  "Malformed link" = "The link has something in it that should not be there, so may not work.",
   "Repository not linked" = "There is a repository in ices-advice for the stock and year, but the advice sheet does not link to it.",
   "OK" = "The link is to the public repository in ices-advice for the stock and year.",
   "No link" = "The advice sheet has no link to GitHub, and there is no repository in ices-advice.",
   "Not checked" = "The advice sheet has not been looked at yet."
 )
 colours <- c(
-  "Links to ices-taf" = "#d03b3b", "Links elsewhere" = "#6250d6", "Repository not public" = "#ec835a",
-  "Wrong stock or year" = "#eda100", "Malformed link" = "#e87ba4", "Repository not linked" = "#8a8984",
+  "Links to ices-taf" = "#d03b3b", "Links elsewhere" = "#6250d6", "Wrong repository" = "#eda100",
+  "Repository not public" = "#ec835a", "Malformed link" = "#e87ba4", "Repository not linked" = "#8a8984",
   "OK" = "#3987e5", "No link" = "#e3e2dd", "Not checked" = "#f4f3f0"
 )
 problems <- setdiff(names(statuses), c("OK", "No link", "Not checked"))
@@ -81,12 +81,13 @@ links <- vapply(strsplit(ifelse(is.na(sheets$links), "", sheets$links), " | ", f
   paste(link(address, x), collapse = "<br>")
 }, "")
 
-# where a repository is not linked to, "Repository" goes to it
-status <- ifelse(
-  sheets$status %in% "Repository not linked" & !is.na(sheets$repository),
-  paste(link(sheets$repository, "Repository"), "not linked"),
-  as.character(sheets$status)
-)
+# where the repository of the stock is not linked to, "repository" goes to it
+status <- as.character(sheets$status)
+known <- !is.na(sheets$repository)
+unlinked <- known & sheets$status %in% "Repository not linked"
+status[unlinked] <- paste(link(sheets$repository[unlinked], "Repository"), "not linked")
+wrong <- known & sheets$status %in% "Wrong repository"
+status[wrong] <- paste("Wrong", link(sheets$repository[wrong], "repository"))
 
 listed <- data.frame(
   Year = as.character(sheets$year),

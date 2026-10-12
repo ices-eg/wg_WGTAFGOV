@@ -51,8 +51,8 @@ sheets_file <- "_data/advice-sheets.csv"
 sheets_first_year <- 2024
 # what can be said of the link in an advice sheet, the most serious first
 link_statuses <- c(
-  "Links to ices-taf", "Links elsewhere", "Repository not public",
-  "Wrong stock or year", "Malformed link", "OK"
+  "Links to ices-taf", "Links elsewhere", "Wrong repository",
+  "Repository not public", "Malformed link", "OK"
 )
 
 # QC results, one entry for each repository tested, named ices-taf_<name>
@@ -261,17 +261,26 @@ advice_sheets <- function(advice_repos) {
   }
 
   link_status <- function(link, stock, year) {
-    part <- regmatches(link, regexec("github[.]com/(ices-[A-Za-z-]+)/?([A-Za-z0-9_.-]*)", link, ignore.case = TRUE))[[1]]
+    # the organisation, and the name of the repository as it is written
+    part <- regmatches(link, regexec("github[.]com/(ices-[A-Za-z-]+)/?([^/?#]*)", link, ignore.case = TRUE))[[1]]
     org <- tolower(part[2])
-    repo <- tolower(sub("[.](git)?$", "", part[3]))
+    repo <- tolower(sub("[.]git$", "", part[3]))
+    expected <- tolower(paste0(year, "_", stock))
     if (org %in% "ices-taf") {
       "Links to ices-taf"
     } else if (!org %in% "ices-advice") {
       "Links elsewhere"
+    } else if (!grepl("^[a-z0-9_.-]+$", repo)) {
+      # no repository named, or characters that cannot be in a name
+      "Malformed link"
+    } else if (!startsWith(repo, expected)) {
+      # another year, another stock, or a mistyped name
+      "Wrong repository"
     } else if (!repo %in% public) {
-      "Repository not public"
-    } else if (!startsWith(repo, tolower(paste0(year, "_", stock)))) {
-      "Wrong stock or year"
+      # the right start to the name, but not a repository that can be seen:
+      # mistyped if the stock and year do have one, otherwise private or
+      # not there
+      if (is.na(repository(stock, year))) "Repository not public" else "Wrong repository"
     } else if (!grepl("^https?://(www[.])?github[.]com/", link, ignore.case = TRUE)) {
       "Malformed link"
     } else {
@@ -292,9 +301,9 @@ advice_sheets <- function(advice_repos) {
     status <- vapply(links, link_status, "", stock = sheets$stock[i], year = sheets$year[i])
     link_statuses[min(match(status, link_statuses))]
   }, "")
-  # the repository that a sheet does not link to
+  # the repository that a sheet should link to, where it does not
   sheets$repository <- NA_character_
-  unlinked <- sheets$status == "Repository not linked"
+  unlinked <- sheets$status %in% c("Repository not linked", "Wrong repository")
   sheets$repository[unlinked] <- mapply(repository, sheets$stock[unlinked], sheets$year[unlinked])
   sheets
 }
