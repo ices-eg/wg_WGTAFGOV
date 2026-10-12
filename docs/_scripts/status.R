@@ -10,7 +10,8 @@
 # who can read them (in GitHub Actions: the TAF_STATUS_TOKEN secret), otherwise
 # only the public repositories are counted.
 #
-# Private repositories are only ever reported as counts, never by name.
+# The names of the private repositories are published in the tables, but
+# nothing of what is in them.
 #
 # The stock assessment statistics follow model.R in
 # https://github.com/ices-taf/shiny_taf-dashboard
@@ -43,7 +44,7 @@ qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
 dir.create(out_dir, showWarnings = FALSE)
 
-fragments <- c("status-summary", "status-public-repos")
+fragments <- c("status-summary")
 
 # ---- helpers ---------------------------------------------------------------
 
@@ -303,42 +304,14 @@ build <- function() {
     )
   ))
 
-  # ---- public repositories -------------------------------------------------
-
-  public <- repos[repos$visibility == "public", ]
-  public <- public[order(public$pushed, decreasing = TRUE), ]
-  cell <- function(x) ifelse(is.na(x), "", esc(as.character(x)))
-  write_html("status-public-repos", c(
-    "<table class=\"table table-sm taf-progress\">",
-    "<thead><tr><th>Repository</th><th>Year</th><th>Type</th><th>Last updated</th></tr></thead>",
-    "<tbody>",
-    sprintf(
-      "<tr><td><a href=\"%s\">%s</a></td><td>%s</td><td>%s</td><td>%s</td></tr>",
-      public$url, esc(public$name), cell(public$year), cell(public$type),
-      substr(public$pushed, 1, 10)
-    ),
-    "</tbody></table>"
-  ))
-
-  # ---- chart data ----------------------------------------------------------
-
-  dated <- repos[!is.na(repos$year), ]
-  types <- tally(dated, "type", "n")
-  types <- types[order(types$n, decreasing = TRUE), ]
-  n_types <- 8
-  if (nrow(types) > n_types) {
-    types <- rbind(
-      types[seq_len(n_types), ],
-      data.frame(type = "other", n = sum(types$n[-seq_len(n_types)]))
-    )
-  }
+  # ---- all repositories ----------------------------------------------------
 
   # read by the R code in status/index.qmd
-  write_data <- function(x, name) {
-    write.csv(x, file.path(out_dir, paste0(name, ".csv")), row.names = FALSE)
-  }
-  write_data(tally(dated, "year", "n"), "repos-by-year")
-  write_data(types, "repos-by-type")
+  write.csv(
+    repos[order(repos$pushed, decreasing = TRUE), c("name", "url", "visibility", "year", "type", "pushed")],
+    file.path(out_dir, "repos.csv"),
+    row.names = FALSE
+  )
 }
 
 result <- tryCatch(build(), error = function(e) e)

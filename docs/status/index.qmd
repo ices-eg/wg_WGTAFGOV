@@ -9,6 +9,15 @@ Every analysis in TAF is a repository in the [ices-taf](https://github.com/ices-
 ```{r}
 #| include: false
 source("_plot.R")
+
+repos <- read.csv("../_generated/repos.csv")
+
+# the type of the repositories named for a year: the most common types, and
+# the rest together
+n_types <- 8
+common <- names(sort(table(repos$type), decreasing = TRUE))
+repos$group <- ifelse(is.na(repos$type) | repos$type %in% head(common, n_types), repos$type, "other")
+type_groups <- c(head(common, n_types), if (length(common) > n_types) "other")
 ```
 
 ## Repositories by year
@@ -17,11 +26,12 @@ Repositories named for a year, `<year>_<name>`, counted by that year.
 
 ```{r}
 #| echo: false
-by_year <- read.csv("../_generated/repos-by-year.csv")
+by_year <- as.data.frame(table(year = repos$year))
+by_year$year <- as.numeric(as.character(by_year$year))
 
 plot_ly(
   by_year,
-  x = ~year, y = ~n,
+  x = ~year, y = ~Freq,
   type = "bar", marker = list(color = blue),
   hovertemplate = "%{x}: %{y} repositories<extra></extra>"
 ) |>
@@ -33,28 +43,57 @@ plot_ly(
 
 ## Repositories by type
 
-The type is the last part of the repository name, `<year>_<name>_<type>`, for the same repositories. Stock repositories without a type are counted as assessments.
+The type is the last part of the repository name, `<year>_<name>_<type>`, for the repositories named for a year. Stock repositories without a type are counted as assessments.
+
+Click a bar to list the repositories of that type in the table below. Double-click the chart to show them all again.
 
 ```{r}
 #| echo: false
-by_type <- read.csv("../_generated/repos-by-type.csv")
-# largest at the top
-by_type$type <- factor(by_type$type, rev(by_type$type))
+# the repositories, shared by the chart and the table so that clicking a bar
+# filters the table
+lock <- "<i class=\"bi bi-lock-fill\" title=\"Private\"></i><span class=\"visually-hidden\">private</span>"
+listed <- data.frame(
+  Repository = sprintf("<a href=\"%s\">%s</a>", repos$url, htmltools::htmlEscape(repos$name)),
+  Year = repos$year,
+  Type = ifelse(is.na(repos$type), "", repos$type),
+  Private = ifelse(repos$visibility == "public", "", lock),
+  "Last updated" = substr(repos$pushed, 1, 10),
+  check.names = FALSE
+)
+shared <- crosstalk::SharedData$new(listed)
+
+# a bar for each type, carrying the keys of its repositories, which is what
+# links it to the rows of the table. The largest is at the top.
+bars <- data.frame(type = factor(rev(type_groups), rev(type_groups)))
+bars$key <- I(lapply(as.character(bars$type), function(type) shared$key()[repos$group %in% type]))
+bars$n <- lengths(bars$key)
 
 plot_ly(
-  by_type,
+  crosstalk::SharedData$new(bars, key = ~key, group = shared$groupName()),
   x = ~n, y = ~type,
   type = "bar", orientation = "h", marker = list(color = blue),
   hovertemplate = "%{y}: %{x} repositories<extra></extra>"
 ) |>
   taf_layout(
+    barmode = "overlay",
     xaxis = list(title = "Repositories"),
     yaxis = list(title = "", ticksuffix = "  ")
+  ) |>
+  highlight(
+    on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
+    selected = attrs_selected(showlegend = FALSE)
   )
 ```
 
-## Public repositories
+## Repositories
 
-Private repositories are included in the counts above but are not listed.
+All the repositories, most recently updated first. Those marked with a lock are private, so their links only work for members of the organisation.
 
-{{< include ../_generated/status-public-repos.md >}}
+```{r}
+#| echo: false
+DT::datatable(
+  shared,
+  rownames = FALSE, escape = FALSE,
+  options = list(pageLength = 25, order = list(list(4, "desc")))
+)
+```
