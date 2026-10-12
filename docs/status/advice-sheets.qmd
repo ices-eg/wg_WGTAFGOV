@@ -69,6 +69,8 @@ knitr::kable(
 
 ## Advice sheets by year
 
+The advice sheets with no link, which are most of them, are left out of the chart to begin with: click **No link** in the legend to add them. They are always in the table.
+
 Click a bar to list its advice sheets in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}
@@ -114,15 +116,20 @@ bars <- aggregate(
   function(x) I(list(x))
 )
 bars$n <- lengths(bars$key)
-bars <- bars[order(bars$Year, bars$Status), ]
+# those with no link are at the top, so that the rest still stand on the axis
+# while they are left out
+stacked <- c(setdiff(found, "No link"), intersect(found, "No link"))
+bars <- bars[order(bars$Year, match(bars$Status, stacked)), ]
 bars$base <- ave(bars$n, bars$Year, FUN = function(n) cumsum(n) - n)
 
 p <- plot_ly()
-for (status in found) {
+for (status in stacked) {
   p <- p |>
     add_bars(
       data = crosstalk::SharedData$new(bars[bars$Status == status, ], key = ~key, group = shared$groupName()),
       x = ~Year, y = ~n, base = ~base, name = status,
+      # most advice sheets have no link: left out until clicked in the legend
+      visible = if (status == "No link") "legendonly" else TRUE,
       marker = list(color = colours[[status]], line = list(color = "white", width = 2)),
       customdata = ~n, hovertemplate = "%{x}: %{customdata} advice sheets"
     )
@@ -131,7 +138,7 @@ p |>
   taf_layout(
     barmode = "overlay",
     xaxis = list(title = "", categoryorder = "category ascending"),
-    yaxis = list(title = "Advice sheets")
+    yaxis = list(title = "Advice sheets", rangemode = "nonnegative")
   ) |>
   layout(legend = list(y = -0.12, traceorder = "normal")) |>
   highlight(
