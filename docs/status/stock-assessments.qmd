@@ -228,7 +228,8 @@ The groups in `r max(stocks$year)`, ordered by the percentage of their stocks at
 #| echo: false
 knitr::kable(
   data.frame(
-    "Expert group" = league$eg,
+    # goes to a search of ices-taf for the repositories of the group
+    "Expert group" = sprintf("[%s](https://github.com/ices-taf/?q=%s)", league$eg, league$eg),
     "Stocks" = league$stocks,
     "Level 1" = league$level1,
     "Level 2" = league$level2,

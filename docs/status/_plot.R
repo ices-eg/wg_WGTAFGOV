@@ -39,7 +39,12 @@ readiness_colours <- setNames(c("#d5d4ce", "#9ec5f4", "#3987e5", "#1c5cab", "#0d
 readiness_assessments <- function(repos) {
   assessments <- data.frame(
     Year = as.character(repos$year),
-    Stock = ifelse(is.na(repos$part), repos$stock, paste0(repos$stock, " (", repos$part, ")")),
+    # goes to the assessment repository
+    Stock = sprintf(
+      "<a href=\"https://github.com/ices-taf/%s\">%s</a>",
+      repos$name,
+      ifelse(is.na(repos$part), repos$stock, paste0(repos$stock, " (", repos$part, ")"))
+    ),
     Level = factor(ifelse(is.na(repos$trl), 0, repos$trl), 0:4, readiness_levels),
     Published = ifelse(repos$published, "Published", "Not published"),
     QC = ifelse(!repos$qc_tested, "Not tested", ifelse(repos$qc_passed, "Passed", "Failed"))
