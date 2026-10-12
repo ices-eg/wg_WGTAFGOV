@@ -250,7 +250,15 @@ advice_sheets <- function(advice_repos) {
   sheets <- sheets[order(sheets$published, sheets$id), ]
   sheets <- sheets[!duplicated(sheets[c("stock", "year")], fromLast = TRUE), ]
 
-  public <- tolower(advice_repos$name[advice_repos$visibility == "public"])
+  advice_repos <- advice_repos[advice_repos$visibility == "public", ]
+  public <- tolower(advice_repos$name)
+  # the repository of a stock and year: the one named for them, or failing
+  # that the first that starts with them
+  repository <- function(stock, year) {
+    name <- tolower(paste0(year, "_", stock))
+    i <- c(which(public == name), which(startsWith(public, name)))
+    if (length(i)) advice_repos$url[i[1]] else NA_character_
+  }
 
   link_status <- function(link, stock, year) {
     part <- regmatches(link, regexec("github[.]com/(ices-[A-Za-z-]+)/?([A-Za-z0-9_.-]*)", link, ignore.case = TRUE))[[1]]
@@ -278,12 +286,16 @@ advice_sheets <- function(advice_repos) {
     links <- strsplit(sheets$links[i], " | ", fixed = TRUE)[[1]]
     if (!length(links)) {
       # nothing linked: is there something that should have been?
-      has_repo <- any(startsWith(public, tolower(paste0(sheets$year[i], "_", sheets$stock[i]))))
+      has_repo <- !is.na(repository(sheets$stock[i], sheets$year[i]))
       return(if (has_repo) "Repository not linked" else "No link")
     }
     status <- vapply(links, link_status, "", stock = sheets$stock[i], year = sheets$year[i])
     link_statuses[min(match(status, link_statuses))]
   }, "")
+  # the repository that a sheet does not link to
+  sheets$repository <- NA_character_
+  unlinked <- sheets$status == "Repository not linked"
+  sheets$repository[unlinked] <- mapply(repository, sheets$stock[unlinked], sheets$year[unlinked])
   sheets
 }
 
@@ -333,7 +345,7 @@ build <- function() {
   # the advice sheet of each stock and year. Read by status/advice-sheets.qmd
   sheets <- advice_sheets(advice)
   write.csv(
-    sheets[order(sheets$year, sheets$stock), c("year", "stock", "title", "published", "doi", "url", "links", "status")],
+    sheets[order(sheets$year, sheets$stock), c("year", "stock", "title", "published", "doi", "url", "links", "status", "repository")],
     file.path(out_dir, "advice-sheets.csv"),
     row.names = FALSE
   )

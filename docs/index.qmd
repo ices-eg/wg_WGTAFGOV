@@ -35,4 +35,19 @@ Issue status by workstream and area, updated automatically from GitHub.
 
 :::
 
+## TAF readiness
+
+```{r}
+#| include: false
+source("status/_plot.R")
+repos <- read.csv("_generated/taf-repos.csv")
+```
+
+The stock assessment repositories by year and [TAF readiness level](system/readiness-level.qmd): `r sum(repos$trl >= 1, na.rm = TRUE)` of the `r nrow(repos)` have their code on GitHub, and `r sum(repos$trl >= 2, na.rm = TRUE)` of those pass the QC test. The assessments behind each bar are listed under [TAF readiness](status/readiness.qmd).
+
+```{r}
+#| echo: false
+readiness_chart(readiness_assessments(repos))
+```
+
 Day-to-day task status lives on the [TAFGOV and TAF team project board](https://github.com/orgs/ices-eg/projects/10). Requests and bug reports go to the [issue tracker](https://github.com/ices-eg/wg_WGTAFGOV/issues).

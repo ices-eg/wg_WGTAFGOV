@@ -72,15 +72,27 @@ Click a bar to list its advice sheets in the table below. To show them all again
 # the advice sheets, shared by the chart and the table so that clicking a bar
 # filters the table
 link <- function(url, text) sprintf("<a href=\"%s\">%s</a>", url, htmltools::htmlEscape(text))
+
+# the links as they are written in the advice sheet, each going to the
+# address in it
 links <- vapply(strsplit(ifelse(is.na(sheets$links), "", sheets$links), " | ", fixed = TRUE), function(x) {
-  # show the link as it is written in the advice sheet
-  paste(htmltools::htmlEscape(x), collapse = "<br>")
+  address <- sub("^.*?((https?://)?(www[.])?github[.]com/)", "\\1", x, perl = TRUE)
+  address <- ifelse(grepl("^https?://", address), address, paste0("https://", address))
+  paste(link(address, x), collapse = "<br>")
 }, "")
+
+# where a repository is not linked to, "Repository" goes to it
+status <- ifelse(
+  sheets$status %in% "Repository not linked" & !is.na(sheets$repository),
+  paste(link(sheets$repository, "Repository"), "not linked"),
+  as.character(sheets$status)
+)
+
 listed <- data.frame(
   Year = as.character(sheets$year),
   Stock = sheets$stock,
   "Advice sheet" = link(sheets$url, sheets$title),
-  Status = sheets$status,
+  Status = status,
   "Link in the advice sheet" = links,
   # not shown: puts the table in the order of the statuses above
   rank = as.numeric(sheets$status),
@@ -91,7 +103,11 @@ shared <- crosstalk::SharedData$new(listed)
 # the bars: the number of advice sheets by year and status, stacked by hand so
 # that a clicked bar is highlighted in place. Each bar carries the keys of its
 # advice sheets, which is what links it to the rows of the table.
-bars <- aggregate(list(key = shared$key()), listed[c("Status", "Year")], function(x) I(list(x)))
+bars <- aggregate(
+  list(key = shared$key()),
+  data.frame(Status = sheets$status, Year = listed$Year),
+  function(x) I(list(x))
+)
 bars$n <- lengths(bars$key)
 bars <- bars[order(bars$Year, bars$Status), ]
 bars$base <- ave(bars$n, bars$Year, FUN = function(n) cumsum(n) - n)

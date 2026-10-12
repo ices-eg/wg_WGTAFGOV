@@ -10,61 +10,13 @@ source("_plot.R")
 
 repos <- read.csv("../_generated/taf-repos.csv")
 
-levels <- c("No level", paste("Level", 1:4))
-colours <- setNames(c("#d5d4ce", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"), levels)
-repos$level <- factor(ifelse(is.na(repos$trl), 0, repos$trl), 0:4, levels)
-
-n <- table(repos$level)
-at_least <- function(level) sum(repos$trl >= level, na.rm = TRUE)
-untested <- sum(repos$trl %in% 1 & !repos$qc_tested)
-
-# the assessments, shared by the chart and the table so that clicking a bar
-# filters the table
-assessments <- data.frame(
-  Year = as.character(repos$year),
-  Stock = ifelse(is.na(repos$part), repos$stock, paste0(repos$stock, " (", repos$part, ")")),
-  Level = repos$level,
-  Published = ifelse(repos$published, "Published", "Not published"),
-  QC = ifelse(!repos$qc_tested, "Not tested", ifelse(repos$qc_passed, "Passed", "Failed"))
-)
-names(assessments)[5] <- "QC test"
+assessments <- readiness_assessments(repos)
+# shared by the chart and the table so that clicking a bar filters the table
 shared <- crosstalk::SharedData$new(assessments)
 
-# the bars: the number of assessments by year and level, stacked by hand so
-# that a clicked bar is highlighted in place. Each bar carries the keys of its
-# assessments, which is what links it to the rows of the table.
-bars <- aggregate(
-  list(key = shared$key()),
-  assessments[c("Level", "Year", "Published")],
-  function(x) I(list(x))
-)
-bars$n <- lengths(bars$key)
-bars <- bars[order(bars$Published, bars$Year, bars$Level), ]
-bars$base <- ave(bars$n, bars$Published, bars$Year, FUN = function(n) cumsum(n) - n)
-
-# one panel of the chart, with a set of bars for each level
-panel <- function(published, legend) {
-  p <- plot_ly()
-  for (level in levels(droplevels(assessments$Level))) {
-    p <- p |>
-      add_bars(
-        data = crosstalk::SharedData$new(
-          bars[bars$Published == published & bars$Level == level, ],
-          key = ~key, group = shared$groupName()
-        ),
-        x = ~Year, y = ~n, base = ~base,
-        name = level, marker = list(color = colours[[level]], line = list(color = "white", width = 2)),
-        legendgroup = level, showlegend = legend,
-        customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
-      )
-  }
-  p |>
-    layout(
-      barmode = "overlay",
-      xaxis = list(title = "", categoryorder = "category ascending"),
-      yaxis = list(title = "Assessment repositories")
-    )
-}
+n <- table(assessments$Level)
+at_least <- function(level) sum(repos$trl >= level, na.rm = TRUE)
+untested <- sum(repos$trl %in% 1 & !repos$qc_tested)
 ```
 
 There are `r nrow(repos)` stock assessment repositories.
@@ -82,25 +34,7 @@ Click a bar to list its assessments in the table below. To show them all again, 
 
 ```{r}
 #| echo: false
-# the published assessments only go back a few years
-subplot(panel("Published", TRUE), panel("Not published", FALSE), shareY = TRUE, widths = c(0.28, 0.72), margin = 0.03) |>
-  layout(
-    annotations = list(
-      list(text = "<b>Published</b>", x = 0, xref = "x domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE),
-      list(text = "<b>Not published</b>", x = 0, xref = "x2 domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE)
-    ),
-    legend = list(orientation = "h", y = -0.12, traceorder = "normal"),
-    margin = list(t = 40),
-    font = list(family = "inherit"),
-    hoverlabel = list(namelength = -1),
-    paper_bgcolor = "rgba(0,0,0,0)",
-    plot_bgcolor = "rgba(0,0,0,0)"
-  ) |>
-  highlight(
-    on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
-    selected = attrs_selected(showlegend = FALSE)
-  ) |>
-  config(displayModeBar = FALSE, doubleClickDelay = 1000)
+readiness_chart(assessments, shared)
 ```
 
 ```{r}
