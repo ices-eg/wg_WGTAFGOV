@@ -38,7 +38,7 @@ jobs:
         use-public-rspm: true
 
     - name: Install R dependencies
-      run: Rscript -e 'install.packages(c("jsonlite", "icesVocab", "knitr", "rmarkdown", "plotly"))'
+      run: Rscript -e 'install.packages(c("jsonlite", "icesVocab", "knitr", "rmarkdown", "plotly", "DT"))'
 
     - name: read issue status from GitHub
       run: Rscript _scripts/progress.R

@@ -17,6 +17,6 @@ Rscript _scripts/status.R
 quarto preview
 ```
 
-The scripts need the [GitHub CLI](https://cli.github.com/) (`gh auth login`) and the `jsonlite` and `icesVocab` R packages. Rendering the pages with R code needs `knitr`, `rmarkdown` and `plotly`.
+The scripts need the [GitHub CLI](https://cli.github.com/) (`gh auth login`) and the `jsonlite` and `icesVocab` R packages. Rendering the pages with R code needs `knitr`, `rmarkdown`, `plotly` and `DT`.
 
 `status.R` counts the repositories in `ices-taf`, most of which are private. Locally it sees what your `gh` login can see. The workflow uses the `TAF_STATUS_TOKEN` repository secret: a token with read access to the metadata and contents of the `ices-taf` repositories. Without it only public repositories are counted and the page says so. Private repositories are reported as counts only, never by name.
