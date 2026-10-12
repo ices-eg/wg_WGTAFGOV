@@ -190,20 +190,32 @@ build <- function() {
 
   # the TAF stock assessment repositories
   taf_repos <- taf_assessments(repos, stock_codes)
-  # keep those with a model.R script with more than the TAF skeleton in it
+  # TAF readiness level, see system/readiness-level.qmd
+  # level 1: the code is on GitHub, a model.R script with more than the TAF
+  # skeleton in it. No repository has been tested for levels 2 and 3 yet.
   taf_repos <- cbind(taf_repos, model_scripts(taf_repos$name))
   taf_repos$has_model <- taf_repos$model_size > min_model_size
-  # for checking locally: _generated/ is not committed or published
+  taf_repos$trl <- ifelse(taf_repos$has_model, 1, NA)
+  # published: the stock has a repository for the year in ices-advice. This is
+  # recorded separately, as level 4 can only follow levels 2 and 3
+  taf_repos$published <-
+    sub("_assessment$", "", taf_repos$name) %in% advice$name |
+    paste(taf_repos$year, taf_repos$stock, sep = "_") %in% advice$name
+  # read by status/readiness.qmd, and for checking locally: _generated/ is
+  # not committed or published
   write.csv(
     taf_repos[
       order(taf_repos$year, taf_repos$stock),
-      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model")
+      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "trl", "published")
     ],
     file.path(out_dir, "taf-repos.csv"),
     row.names = FALSE
   )
+  message(
+    sum(taf_repos$has_model), " at readiness level 1, ",
+    sum(taf_repos$has_model & taf_repos$published), " of them published"
+  )
   taf_repos <- taf_repos[taf_repos$has_model, ]
-  message(nrow(taf_repos), " with a model.R script")
 
   # stock list
   sd <- jsonlite::fromJSON(sd_url)$value

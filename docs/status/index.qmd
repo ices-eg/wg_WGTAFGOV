@@ -1,5 +1,13 @@
 ---
 title: "TAF repositories"
+resources:
+  - taf-status.js
+include-in-header:
+  text: |
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.35.2/plotly.min.js"></script>
+include-after-body:
+  text: |
+    <script src="taf-status.js"></script>
 ---
 
 Every analysis in TAF is a repository in the [ices-taf](https://github.com/ices-taf) organisation on GitHub. This page summarises all of them; [stock assessments](stock-assessments.qmd) looks at the assessments linked to advice.

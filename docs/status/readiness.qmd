@@ -1,0 +1,61 @@
+---
+title: "TAF readiness"
+---
+
+The [TAF readiness level](../system/readiness-level.qmd) of the stock assessment repositories in [ices-taf](https://github.com/ices-taf), by assessment year.
+
+```{r}
+#| include: false
+library(plotly)
+
+repos <- read.csv("../_generated/taf-repos.csv")
+
+repos$status <- factor(
+  paste(
+    ifelse(is.na(repos$trl), "No level", paste("Level", repos$trl)),
+    ifelse(repos$published, "published", "not published"),
+    sep = ", "
+  ),
+  levels = c(
+    "Level 1, published", "Level 1, not published",
+    "No level, published", "No level, not published"
+  )
+)
+colours <- c("#1c5cab", "#86b6ef", "#8a8984", "#d5d4ce")
+
+counts <- as.data.frame(table(year = repos$year, status = repos$status))
+counts$year <- as.numeric(as.character(counts$year))
+n <- table(repos$status)
+```
+
+There are `r nrow(repos)` stock assessment repositories. `r sum(!is.na(repos$trl))` are at level 1, with their code on GitHub, and `r n[["Level 1, published"]]` of those are published in [ices-advice](https://github.com/ices-advice). No assessment has been tested for level 2 yet, so none is above level 1.
+
+A further `r sum(is.na(repos$trl))` repositories have no level, because they have no `model.R` script or only an empty one. `r n[["No level, published"]]` of them are for stocks that are published.
+
+```{r}
+#| echo: false
+plot_ly(
+  counts,
+  x = ~year, y = ~Freq, color = ~status, colors = colours,
+  type = "bar",
+  marker = list(line = list(color = "white", width = 2)),
+  hovertemplate = "%{x}: %{y} repositories"
+) |>
+  layout(
+    barmode = "stack",
+    xaxis = list(title = "", dtick = 1),
+    yaxis = list(title = "Assessment repositories"),
+    legend = list(orientation = "h", y = 1.15, traceorder = "normal"),
+    font = list(family = "inherit"),
+    hoverlabel = list(namelength = -1),
+    paper_bgcolor = "rgba(0,0,0,0)",
+    plot_bgcolor = "rgba(0,0,0,0)"
+  ) |>
+  config(displayModeBar = FALSE)
+```
+
+```{r}
+#| echo: false
+wide <- as.data.frame.matrix(table(Year = repos$year, repos$status))
+knitr::kable(cbind(Year = rownames(wide), wide), row.names = FALSE)
+```

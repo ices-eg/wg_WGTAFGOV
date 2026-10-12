@@ -1,0 +1,41 @@
+---
+title: "TAF readiness level"
+---
+
+The TAF readiness level (TRL) says how far a stock assessment has come towards being a quality assured, published TAF assessment. There are four levels.
+
+| Level | Reached when |
+|---|---|
+| 1 | The assessment code is on GitHub. |
+| 2 | The code passes the QC test. |
+| 3 | The code passes the QC run test. |
+| 4 | The assessment is published and linked to advice. |
+
+The levels build on each other. An assessment can only reach level 2 after reaching level 1, level 3 after level 2, and level 4 after level 3.
+
+## The levels
+
+### Level 1: code on GitHub
+
+The assessment has a repository in the [ices-taf](https://github.com/ices-taf) organisation containing its code.
+
+### Level 2: passes the QC test
+
+The code passes the automated quality checks. This is the validation step in the [process workflow](process-workflow.qmd).
+
+### Level 3: passes the QC run test
+
+The code runs successfully from start to finish. This is the execution step in the [process workflow](process-workflow.qmd).
+
+### Level 4: published and linked to advice
+
+The assessment is published in the [ices-advice](https://github.com/ices-advice) organisation and linked from the advice for the stock.
+
+## Current status
+
+- No published stock has been tested for level 2 yet. This includes every stock in the ices-advice organisation.
+- Level 3 is under development, so no stock has reached it.
+
+The number of assessments at each level is shown under [TAF readiness](../status/readiness.qmd).
+
+The software behind the checks is described under [software components](components.qmd).

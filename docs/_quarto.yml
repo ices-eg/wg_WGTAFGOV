@@ -37,6 +37,7 @@ website:
         - system/technical-layers.qmd
         - system/technical-overview.qmd
         - system/tafxplorer.qmd
+        - system/readiness-level.qmd
         - system/components.qmd
     - title: Strategy
       contents:
@@ -46,6 +47,7 @@ website:
       contents:
         - status/index.qmd
         - status/stock-assessments.qmd
+        - status/readiness.qmd
   page-footer:
     center: "ICES Working Group on the Transparent Assessment Framework Governance (WGTAFGOV)"
 
