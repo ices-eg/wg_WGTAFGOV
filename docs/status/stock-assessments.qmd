@@ -157,12 +157,18 @@ subplot(panels, shareY = TRUE, margin = 0.03) |>
 
 ## Coverage by expert group
 
-The percentage of each expert group's stocks that are in TAF. The menu above the chart chooses which stocks count: those at level 2, those at level 1 or 2, or all those with a repository, whatever is in it. Click a group in the legend to hide it, and double-click to show it on its own. Groups with nothing in TAF in the last four years are left out of the chart, but are in the table below.
+How much of each expert group's stocks is in TAF, in four panels: the stocks with a repository but no level, those at level 1, those at level 2, and those at level 1 or 2 together. The menu above the chart switches between the percentage of the group's stocks and the number of stocks. Each panel has its own scale.
+
+Click a group in the legend to hide it, and double-click to show it on its own. Groups with nothing in TAF in the last four years are left out of the chart, but are in the table below.
 
 ```{r}
 #| echo: false
+#| fig-height: 8
 groups <- aggregate(
-  cbind(repository = !is.na(level), in_taf, level1 = level %in% 1, level2 = level %in% 2, published, stocks = 1) ~ eg + year,
+  cbind(
+    repository = !is.na(level), no_level = level %in% 0, level1 = level %in% 1,
+    level2 = level %in% 2, in_taf, published, stocks = 1
+  ) ~ eg + year,
   stocks, sum
 )
 groups$coverage <- 100 * groups$in_taf / groups$stocks
@@ -179,51 +185,90 @@ dashes <- c("solid", "dash", "dot")
 last_years <- groups$year > max(groups$year) - 4
 drawn_groups <- league$eg[league$eg %in% groups$eg[last_years & groups$repository > 0]]
 
-p <- plot_ly()
-for (i in seq_along(drawn_groups)) {
-  d <- groups[groups$eg == drawn_groups[i], ]
-  colour <- palette[(i - 1) %% length(palette) + 1]
-  p <- p |>
-    add_trace(
-      data = d, x = ~year, y = ~coverage, name = drawn_groups[i],
-      type = "scatter", mode = "lines+markers",
-      line = list(color = colour, width = 2, dash = dashes[(i - 1) %/% length(palette) + 1]),
-      marker = list(color = colour, size = 6),
-      customdata = ~paste(in_taf, "of", stocks),
-      hovertemplate = "%{x}: %{y:.0f}% (%{customdata} stocks)"
+# the panels, and the column of the stocks counted in each
+measures <- c("No level" = "no_level", "Level 1" = "level1", "Level 2" = "level2", "Level 1 + 2" = "in_taf")
+
+# what is drawn for a group in a panel, as a percentage or a number
+values <- function(group, measure, percentage) {
+  d <- groups[groups$eg == group, ]
+  n <- d[[measure]]
+  if (percentage) {
+    list(y = 100 * n / d$stocks, customdata = paste(n, "of", d$stocks))
+  } else {
+    list(y = n, customdata = sprintf("%.0f%% of %d", 100 * n / d$stocks, d$stocks))
+  }
+}
+hover <- c("%{x}: %{y} stocks (%{customdata})", "%{x}: %{y:.0f}% (%{customdata} stocks)")
+
+# one panel: a line for each group
+panel <- function(measure, legend) {
+  p <- plot_ly()
+  for (i in seq_along(drawn_groups)) {
+    v <- values(drawn_groups[i], measure, TRUE)
+    colour <- palette[(i - 1) %% length(palette) + 1]
+    p <- p |>
+      add_trace(
+        x = groups$year[groups$eg == drawn_groups[i]], y = v$y, name = drawn_groups[i],
+        legendgroup = drawn_groups[i], showlegend = legend,
+        type = "scatter", mode = "lines+markers",
+        line = list(color = colour, width = 2, dash = dashes[(i - 1) %/% length(palette) + 1]),
+        marker = list(color = colour, size = 6),
+        customdata = v$customdata, hovertemplate = hover[2]
+      )
+  }
+  p |>
+    layout(
+      xaxis = list(title = "", dtick = 1),
+      yaxis = list(title = "", ticksuffix = "%", rangemode = "tozero")
     )
 }
 
-# the menu: the lines redrawn for the stocks that count, which rescales the chart
-menu_entry <- function(label, column, title) {
-  rows <- lapply(drawn_groups, function(group) groups[groups$eg == group, ])
+# the menu: every line redrawn as a percentage or a number, in the order the
+# lines are drawn, which rescales the panels
+menu_entry <- function(label, percentage) {
+  all <- list()
+  for (measure in measures) {
+    all <- c(all, lapply(drawn_groups, values, measure = measure, percentage = percentage))
+  }
+  axes <- c("yaxis", "yaxis2", "yaxis3", "yaxis4")
   list(
     method = "update", label = label,
     args = list(
       list(
-        y = lapply(rows, function(d) 100 * d[[column]] / d$stocks),
-        customdata = lapply(rows, function(d) paste(d[[column]], "of", d$stocks))
+        y = lapply(all, `[[`, "y"),
+        customdata = lapply(all, `[[`, "customdata"),
+        hovertemplate = hover[percentage + 1]
       ),
-      list(yaxis.title.text = title, yaxis.autorange = TRUE)
+      c(
+        setNames(rep(list(if (percentage) "%" else ""), 4), paste0(axes, ".ticksuffix")),
+        setNames(rep(list(TRUE), 4), paste0(axes, ".autorange"))
+      )
     )
   )
 }
 menu <- list(
-  active = 1,
-  x = 1, xanchor = "right", y = 1.02, yanchor = "bottom",
+  active = 0,
+  x = 1, xanchor = "right", y = 1.05, yanchor = "bottom",
   buttons = list(
-    menu_entry("Level 2", "level2", "Stocks at level 2"),
-    menu_entry("Level 1 + 2", "in_taf", "Stocks at level 1 or 2"),
-    menu_entry("All", "repository", "Stocks with a repository")
+    menu_entry("Percentage of stocks", TRUE),
+    menu_entry("Number of stocks", FALSE)
   )
 )
 
-p |>
+title <- function(text, k) {
+  list(
+    text = paste0("<b>", text, "</b>"), showarrow = FALSE,
+    x = 0, xref = paste0("x", if (k %% 2 == 0) 2 else "", " domain"), xanchor = "left",
+    y = 1, yref = paste0("y", if (k > 1) k else "", " domain"), yanchor = "bottom"
+  )
+}
+
+panels <- lapply(seq_along(measures), function(k) panel(measures[[k]], k == 1))
+subplot(panels, nrows = 2, shareX = TRUE, margin = c(0.03, 0.03, 0.07, 0.07)) |>
   taf_layout(
-    xaxis = list(title = "", dtick = 1),
-    yaxis = list(title = "Stocks at level 1 or 2", ticksuffix = "%", rangemode = "tozero"),
+    annotations = lapply(seq_along(measures), function(k) title(names(measures)[k], k)),
     updatemenus = list(menu),
-    margin = list(t = 60)
+    margin = list(t = 70)
   ) |>
   layout(legend = list(orientation = "v", x = 1.02, y = 1))
 ```
@@ -237,6 +282,7 @@ knitr::kable(
     # goes to a search of ices-taf for the repositories of the group
     "Expert group" = sprintf("[%s](https://github.com/ices-taf/?q=%s)", league$eg, league$eg),
     "Stocks" = league$stocks,
+    "No level" = league$no_level,
     "Level 1" = league$level1,
     "Level 2" = league$level2,
     "Level 1 + 2" = league$in_taf,
@@ -244,6 +290,6 @@ knitr::kable(
     "Published" = league$published,
     check.names = FALSE
   ),
-  row.names = FALSE, align = "lrrrrrr"
+  row.names = FALSE, align = "lrrrrrrr"
 )
 ```
