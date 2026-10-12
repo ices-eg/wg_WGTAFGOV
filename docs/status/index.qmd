@@ -12,12 +12,14 @@ source("_plot.R")
 
 repos <- read.csv("../_generated/repos.csv")
 
-# the type of the repositories named for a year: the most common types, and
-# the rest together
+# the type of the repositories named for a year: the most common types and
+# some others of interest, largest first, and the rest together
 n_types <- 8
+of_interest <- c("data", "forecast", "acousticIndex")
 common <- names(sort(table(repos$type), decreasing = TRUE))
-repos$group <- ifelse(is.na(repos$type) | repos$type %in% head(common, n_types), repos$type, "other")
-type_groups <- c(head(common, n_types), if (length(common) > n_types) "other")
+shown <- common[common %in% c(head(common, n_types), of_interest)]
+repos$group <- ifelse(is.na(repos$type) | repos$type %in% shown, repos$type, "other")
+type_groups <- c(shown, if (length(common) > length(shown)) "other")
 ```
 
 ## Repositories by year
@@ -43,7 +45,7 @@ plot_ly(
 
 ## Repositories by type
 
-The type is the last part of the repository name, `<year>_<name>_<type>`, for the repositories named for a year. Stock repositories without a type are counted as assessments.
+The type is the last part of the repository name, `<year>_<name>_<type>`, for the repositories named for a year. Stock repositories without a type are counted as assessments, as are those for a part of a stock, `<year>_<stock>_<west or south>`.
 
 Click a bar to list the repositories of that type in the table below. Double-click the chart to show them all again.
 

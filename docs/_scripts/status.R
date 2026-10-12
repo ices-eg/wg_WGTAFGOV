@@ -107,6 +107,8 @@ add_name_parts <- function(repos) {
     NA
   )
   repos$type <- vapply(parts, function(x) {
+    # the type follows the part of the stock, if there is one
+    if (length(x) > 2 && x[3] %in% stock_parts) x <- x[-3]
     if (length(x) > 2) sub("-.*$", "", x[3]) else NA_character_
   }, "")
   repos$type[is.na(repos$type) & !is.na(repos$stock)] <- "assessment"
