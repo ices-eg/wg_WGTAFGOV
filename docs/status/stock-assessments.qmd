@@ -23,23 +23,63 @@ stocks$state <- factor(
 # in TAF to some degree: there is code, so level 1 or above
 stocks$in_taf <- stocks$level %in% 1:4
 
-latest <- stocks[stocks$year == max(stocks$year), ]
-percent <- function(x) sprintf("%.0f%%", 100 * mean(x))
+# the headline figures: the last three years, the latest still under way if
+# it is the current year
+this_year <- as.numeric(format(Sys.Date(), "%Y"))
+recent <- tail(sort(unique(stocks$year)), 3)
+complete <- max(recent[recent < this_year])
+year_label <- ifelse(recent == this_year, paste(recent, "so far"), recent)
+
+count <- function(of, among = TRUE) sapply(recent, function(y) sum(of & among & stocks$year == y))
+with_percent <- function(n, total) sprintf("%d (%.0f%%)", n, 100 * n / total)
+cat1 <- stocks$category == "Category 1"
+n_groups <- function(among) sapply(recent, function(y) length(unique(stocks$eg[stocks$year == y & among])))
+
+headline <- rbind(
+  "Stocks with TAF code published with the advice" = with_percent(count(stocks$published), count(TRUE)),
+  "of which category 1 stocks" = with_percent(count(stocks$published, cat1), count(cat1)),
+  "Stocks with assessment code in TAF" = with_percent(count(stocks$in_taf), count(TRUE)),
+  "of which passing the QC test" = count(stocks$level %in% 2),
+  "Expert groups with assessment code in TAF" = paste(n_groups(stocks$in_taf), "of", n_groups(TRUE))
+)
+colnames(headline) <- year_label
+
+last <- stocks[stocks$year == complete, ]
+current <- unique(stocks$stock[stocks$year == max(stocks$year)])
 ```
 
-In `r max(stocks$year)`, `r sum(latest$in_taf)` of the `r nrow(latest)` stocks (`r percent(latest$in_taf)`) have assessment code in TAF, at level 1 or above, and `r sum(latest$level %in% 2)` of them have reached level 2. Another `r sum(latest$level %in% 0)` stocks have a repository with no code in it yet. `r sum(latest$published)` stocks are published.
+::: {.callout-note icon=false}
+## Current status
+
+In `r complete`, the last complete year, **`r sum(last$published)` stocks had TAF code published with their advice**: `r sprintf("%.0f%%", 100 * mean(last$published))` of all stocks and `r sprintf("%.0f%%", 100 * mean(last$published[last$category == "Category 1"]))` of the category 1 stocks. **`r sum(current %in% stocks$stock[stocks$in_taf])` of the `r length(current)` current stocks** have had assessment code in TAF in at least one year since `r min(stocks$year)`.
+
+```{r}
+#| echo: false
+knitr::kable(headline, align = "r")
+```
+
+Percentages are of the stocks ICES gives advice on in the year.
+:::
 
 ## Stocks by readiness level
 
-One panel for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the line shows how many of them are published.
+One panel for the category 1 stocks and one for the stocks in categories 2 to 6. The height of a bar is the number of stocks, and the line shows how many of them are published. The menu above the chart switches between the number of stocks and the percentage of the stocks in the category.
 
 ```{r}
 #| echo: false
 counts <- as.data.frame(table(year = stocks$year, category = stocks$category, state = stocks$state))
-counts$year <- as.numeric(as.character(counts$year))
-published <- aggregate(published ~ year + category, stocks, sum)
+names(counts)[4] <- "n"
+published <- aggregate(cbind(n = published) ~ year + category, stocks, sum)
+published$state <- "Published"
+
+# everything drawn: the bars for each state and the line for the published
+drawn <- rbind(counts, published[names(counts)])
+drawn$year <- as.numeric(as.character(drawn$year))
+total <- table(stocks$year, stocks$category)
+drawn$percent <- 100 * drawn$n / total[cbind(as.character(drawn$year), as.character(drawn$category))]
 # nothing was published before the first year with a published stock
-published <- published[published$year >= min(c(published$year[published$published > 0], Inf)), ]
+first_published <- min(c(published$year[published$n > 0], Inf))
+drawn <- drawn[drawn$state != "Published" | drawn$year >= first_published, ]
 
 # one panel of the chart: the stocks of a category by year and state
 panel <- function(category, legend) {
@@ -47,8 +87,8 @@ panel <- function(category, legend) {
   for (state in states) {
     p <- p |>
       add_bars(
-        data = counts[counts$category == category & counts$state == state, ],
-        x = ~year, y = ~Freq, name = state,
+        data = drawn[drawn$category == category & drawn$state == state, ],
+        x = ~year, y = ~n, name = state,
         legendgroup = state, showlegend = legend,
         marker = list(color = state_colours[[state]], line = list(color = "white", width = 2)),
         hovertemplate = "%{x}: %{y} stocks"
@@ -56,13 +96,13 @@ panel <- function(category, legend) {
   }
   p |>
     add_trace(
-      data = published[published$category == category, ],
-      x = ~year, y = ~published, name = "Published",
+      data = drawn[drawn$category == category & drawn$state == "Published", ],
+      x = ~year, y = ~n, name = "Published",
       legendgroup = "Published", showlegend = legend,
       type = "scatter", mode = "lines+markers",
       line = list(color = orange, width = 2),
       marker = list(color = orange, size = 8, line = list(color = "white", width = 2)),
-      hovertemplate = "%{x}: %{y} published"
+      hovertemplate = "%{x}: %{y} stocks"
     ) |>
     layout(
       barmode = "stack",
@@ -71,6 +111,31 @@ panel <- function(category, legend) {
     )
 }
 
+# the menu: the values of every bar and line as a number or a percentage, in
+# the order they are drawn
+menu_entry <- function(label, column, hover, suffix) {
+  values <- list()
+  for (category in levels(stocks$category)) {
+    for (state in c(states, "Published")) {
+      values <- c(values, list(drawn[[column]][drawn$category == category & drawn$state == state]))
+    }
+  }
+  list(
+    method = "update", label = label,
+    args = list(
+      list(y = values, hovertemplate = hover),
+      list(yaxis.title.text = label, yaxis.ticksuffix = suffix)
+    )
+  )
+}
+menu <- list(
+  x = 1, xanchor = "right", y = 1.04, yanchor = "bottom",
+  buttons = list(
+    menu_entry("Stocks", "n", "%{x}: %{y} stocks", ""),
+    menu_entry("Percentage of stocks", "percent", "%{x}: %{y:.0f}% of stocks", "%")
+  )
+)
+
 panels <- lapply(levels(stocks$category), function(category) panel(category, category == "Category 1"))
 subplot(panels, shareY = TRUE, margin = 0.03) |>
   taf_layout(
@@ -78,7 +143,8 @@ subplot(panels, shareY = TRUE, margin = 0.03) |>
       list(text = "<b>Category 1</b>", x = 0, xref = "x domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE),
       list(text = "<b>Categories 2-6</b>", x = 0, xref = "x2 domain", y = 1.04, yref = "paper", xanchor = "left", yanchor = "bottom", showarrow = FALSE)
     ),
-    margin = list(t = 40)
+    updatemenus = list(menu),
+    margin = list(t = 60)
   ) |>
   layout(legend = list(y = -0.12, traceorder = "normal"))
 ```
