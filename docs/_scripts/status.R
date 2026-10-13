@@ -42,6 +42,15 @@ stock_parts <- c("west", "south")
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
 
+# other types of work to give a TAF readiness level to, by the type in the
+# name of the repository, <year>_<name>_<type>, in the groups they are shown in
+other_types <- list(
+  "Mixed fisheries advice" = "MixedFisheriesAdvice",
+  "Benchmarks" = "benchmark",
+  "Reference points" = c("newref", "wkmfoa"),
+  "Surveys" = c("survey", "acousticIndex")
+)
+
 # the model scripts of each repository, kept from one run to the next so that
 # only the repositories pushed to since are read again
 models_file <- "_data/model-scripts.csv"
@@ -337,18 +346,38 @@ build <- function() {
   repos <- add_name_parts(org_repos("ices-taf"))
   advice <- add_name_parts(org_repos("ices-advice"))
 
-  # the TAF stock assessment repositories
-  taf_repos <- taf_assessments(repos, stock_codes)
   # TAF readiness level, see system/readiness-level.qmd
-  # level 1: the code is on GitHub, with more in the model scripts than the
-  # TAF skeleton
-  taf_repos <- cbind(taf_repos, cached_model_scripts(taf_repos))
-  taf_repos$has_model <- taf_repos$model_size > min_model_size
-  taf_repos$trl <- ifelse(taf_repos$has_model, 1, NA)
-  # level 2: at level 1 and passes the QC test. No repository has been tested
-  # for level 3 yet.
-  taf_repos <- cbind(taf_repos, qc_results(taf_repos$name))
-  taf_repos$trl[taf_repos$has_model & taf_repos$qc_passed %in% TRUE] <- 2
+  with_level <- function(x) {
+    # level 1: the code is on GitHub, with more in the model scripts than the
+    # TAF skeleton
+    x <- cbind(x, cached_model_scripts(x))
+    x$has_model <- x$model_size > min_model_size
+    x$trl <- ifelse(x$has_model, 1, NA)
+    # level 2: at level 1 and passes the QC test. No repository has been
+    # tested for level 3 yet.
+    x <- cbind(x, qc_results(x$name))
+    x$trl[x$has_model & x$qc_passed %in% TRUE] <- 2
+    x
+  }
+
+  # the TAF stock assessment repositories
+  taf_repos <- with_level(taf_assessments(repos, stock_codes))
+
+  # the repositories of some other types of work, by the type in their name.
+  # Read by status/readiness.qmd
+  other_repos <- repos[repos$type %in% unlist(other_types), ]
+  other_repos$group <- names(other_types)[
+    vapply(other_repos$type, function(type) which(vapply(other_types, function(x) type %in% x, TRUE)), 1L)
+  ]
+  other_repos <- with_level(other_repos)
+  write.csv(
+    other_repos[
+      order(other_repos$group, other_repos$year, other_repos$name),
+      c("name", "year", "type", "group", "visibility", "pushed", "model_size", "has_model", "qc_tested", "qc_passed", "trl")
+    ],
+    file.path(out_dir, "other-repos.csv"),
+    row.names = FALSE
+  )
   # published: the stock has a public repository for the year in ices-advice.
   # A private one is not counted: the readers of the advice cannot open it,
   # and it can only be seen by a run with access to it. This is recorded

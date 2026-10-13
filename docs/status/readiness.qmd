@@ -54,3 +54,126 @@ DT::datatable(
   options = list(pageLength = 25, order = list(list(0, "desc"), list(1, "asc")))
 )
 ```
+
+## Other repositories
+
+The readiness level of the repositories of four other types of work, by the year in their name. The levels are found in the same way as for the assessments: level 1 for a repository with some modelling in it, and level 2 for one that also passes the QC test. These repositories are not published themselves, so there is no panel for the published.
+
+```{r}
+#| echo: false
+#| fig-height: 7
+other <- read.csv("../_generated/other-repos.csv")
+other$level <- factor(ifelse(is.na(other$trl), 0, other$trl), 0:4, readiness_levels)
+# in the order of the panels
+other$group <- factor(other$group, unique(c("Mixed fisheries advice", "Benchmarks", "Reference points", "Surveys", other$group)))
+
+# the repositories, shared by the chart and the table so that clicking a bar
+# filters the table
+other_listed <- data.frame(
+  Year = other$year,
+  Repository = sprintf("<a href=\"https://github.com/ices-taf/%s\">%s</a>", other$name, other$name),
+  Group = other$group,
+  Type = other$type,
+  Level = other$level,
+  QC = ifelse(!other$qc_tested, "Not tested", ifelse(other$qc_passed, "Passed", "Failed"))
+)
+names(other_listed)[6] <- "QC test"
+other_shared <- crosstalk::SharedData$new(other_listed)
+
+# the bars: the number of repositories by group, year and level, stacked by
+# hand so that a clicked bar is highlighted in place, each with the keys of
+# its repositories. Those with no level are at the top of a bar, and left
+# out until clicked in the legend, as in the chart of the assessments.
+stacked <- c(setdiff(levels(droplevels(other$level)), "No level"), "No level")
+bars <- aggregate(
+  list(key = other_shared$key()),
+  list(level = other$level, year = other$year, group = other$group),
+  function(x) I(list(x))
+)
+bars$n <- lengths(bars$key)
+bars <- bars[order(bars$group, bars$year, match(bars$level, stacked)), ]
+bars$base <- ave(bars$n, bars$group, bars$year, FUN = function(n) cumsum(n) - n)
+
+# a level has its entry in the legend from the first panel it is in
+groups <- levels(other$group)
+first <- vapply(stacked, function(level) groups[groups %in% bars$group[bars$level == level]][1], "")
+
+panel <- function(group) {
+  p <- plot_ly()
+  for (level in stacked) {
+    d <- bars[bars$group == group & bars$level == level, ]
+    if (!nrow(d)) next
+    p <- p |>
+      add_bars(
+        data = linked_bars(d, other_shared),
+        x = ~year, y = ~n, base = ~base, name = level,
+        legendgroup = level, showlegend = first[[level]] == group,
+        legendrank = match(level, stacked),
+        visible = if (level == "No level") "legendonly" else TRUE,
+        marker = list(color = readiness_colours[[level]], line = list(color = "white", width = 2)),
+        customdata = ~n, hovertemplate = "%{x}: %{customdata} repositories"
+      )
+  }
+  p |>
+    layout(
+      barmode = "overlay",
+      xaxis = list(title = "", dtick = 1, range = range(other$year) + c(-0.6, 0.6)),
+      yaxis = list(title = "", rangemode = "nonnegative")
+    )
+}
+
+title <- function(text, k) {
+  list(
+    text = paste0("<b>", text, "</b>"), showarrow = FALSE,
+    x = 0, xref = paste0("x", if (k %% 2 == 0) 2 else "", " domain"), xanchor = "left",
+    y = 1, yref = paste0("y", if (k > 1) k else "", " domain"), yanchor = "bottom"
+  )
+}
+
+subplot(lapply(groups, panel), nrows = 2, shareX = TRUE, margin = c(0.03, 0.03, 0.07, 0.07)) |>
+  taf_layout(
+    annotations = lapply(seq_along(groups), function(k) title(groups[k], k)),
+    margin = list(t = 40)
+  ) |>
+  layout(legend = list(y = -0.08, traceorder = "normal")) |>
+  highlight(
+    on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
+    selected = attrs_selected(showlegend = FALSE)
+  ) |>
+  config(doubleClickDelay = 500)
+```
+
+The repositories are those named `<year>_<name>_<type>` with these types. The chart opens without those with no level: click **No level** in the legend to add them. Each panel has its own scale.
+
+Click a bar to list its repositories in the table at the end of the page. To show them all again, use the button above the table or double-click the chart.
+
+```{r}
+#| echo: false
+types <- tapply(other$type, other$group, function(x) paste0("`", sort(unique(x)), "`", collapse = ", "))
+summary <- as.data.frame.matrix(table(other$group, droplevels(other$level))[, stacked, drop = FALSE])
+knitr::kable(
+  data.frame(
+    Group = rownames(summary),
+    Types = unname(types[rownames(summary)]),
+    Repositories = rowSums(summary),
+    summary,
+    "Not tested" = as.vector(table(other$group, !other$qc_tested)[rownames(summary), "TRUE"]),
+    check.names = FALSE
+  ),
+  row.names = FALSE, align = c("l", "l", rep("r", ncol(summary) + 2))
+)
+```
+
+```{r}
+#| echo: false
+show_all_button(other_shared, "Show all repositories")
+```
+
+```{r}
+#| echo: false
+DT::datatable(
+  other_shared,
+  rownames = FALSE, escape = FALSE,
+  options = list(pageLength = 25, order = list(list(0, "desc"), list(2, "asc"), list(1, "asc")))
+)
+```

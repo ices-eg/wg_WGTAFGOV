@@ -126,7 +126,7 @@ p <- plot_ly()
 for (status in stacked) {
   p <- p |>
     add_bars(
-      data = crosstalk::SharedData$new(bars[bars$Status == status, ], key = ~key, group = shared$groupName()),
+      data = linked_bars(bars[bars$Status == status, ], shared),
       x = ~Year, y = ~n, base = ~base, name = status,
       # most advice sheets have no link: left out until clicked in the legend
       visible = if (status == "No link") "legendonly" else TRUE,
@@ -145,7 +145,7 @@ p |>
     on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
     selected = attrs_selected(showlegend = FALSE)
   ) |>
-  config(doubleClickDelay = 1000)
+  config(doubleClickDelay = 500)
 ```
 
 ## Advice sheets

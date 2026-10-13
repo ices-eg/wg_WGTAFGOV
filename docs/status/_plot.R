@@ -19,6 +19,20 @@ taf_layout <- function(p, ...) {
     config(displayModeBar = FALSE)
 }
 
+# the bars of a chart, each with the keys of the rows of a table in its "key"
+# column, linked to the table so that clicking a bar filters it. A set of bars
+# with only one bar in it is not linked properly by plotly, so is given a
+# second one with no height, which is not drawn.
+linked_bars <- function(bars, shared, n = "n") {
+  if (nrow(bars) == 1) {
+    empty <- bars
+    empty[[n]] <- NA
+    empty$key <- I(list(character()))
+    bars <- rbind(bars, empty)
+  }
+  crosstalk::SharedData$new(bars, key = ~key, group = shared$groupName())
+}
+
 # a button that clears the selection made by clicking a chart, so that a
 # linked table lists everything again
 show_all_button <- function(shared, label = "Show all") {
@@ -120,7 +134,7 @@ readiness_chart <- function(assessments, shared = NULL) {
       d <- blocks[[i]]
       if (d$panel[1] != which) next
       colour <- d$colour[1]
-      data <- if (is.null(shared)) d else crosstalk::SharedData$new(d, key = ~key, group = shared$groupName())
+      data <- if (is.null(shared)) d else linked_bars(d, shared)
       p <- p |>
         add_bars(
           data = data,
@@ -156,7 +170,7 @@ readiness_chart <- function(assessments, shared = NULL) {
         on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
         selected = attrs_selected(showlegend = FALSE)
       ) |>
-      config(doubleClickDelay = 1000)
+      config(doubleClickDelay = 500)
   }
   p
 }

@@ -71,7 +71,7 @@ bars$key <- I(lapply(as.character(bars$type), function(type) shared$key()[repos$
 bars$n <- lengths(bars$key)
 
 plot_ly(
-  crosstalk::SharedData$new(bars, key = ~key, group = shared$groupName()),
+  linked_bars(bars, shared),
   x = ~n, y = ~type,
   type = "bar", orientation = "h", marker = list(color = blue),
   hovertemplate = "%{y}: %{x} repositories<extra></extra>"
@@ -85,7 +85,7 @@ plot_ly(
     on = "plotly_click", off = "plotly_doubleclick", opacityDim = 0.35,
     selected = attrs_selected(showlegend = FALSE)
   ) |>
-  config(doubleClickDelay = 1000)
+  config(doubleClickDelay = 500)
 ```
 
 ## Repositories
