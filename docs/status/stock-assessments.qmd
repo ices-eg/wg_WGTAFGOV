@@ -4,7 +4,7 @@ title: "Stock assessments"
 
 How many of the stocks ICES gives advice on have their assessment in TAF, and how far along it is.
 
-Each stock is placed by the [TAF readiness level](../system/readiness-level.qmd) of its assessment repository in [ices-taf](https://github.com/ices-taf) for the year. A stock is published when it also has a repository for the year in [ices-advice](https://github.com/ices-advice). The stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk). The individual assessments are listed under [TAF readiness](readiness.qmd).
+Each stock is placed by the [TAF readiness level](../system/readiness-level.qmd) of its assessment repository in [ices-taf](https://github.com/ices-taf) for the year. A stock is published when it also has a public repository for the year in [ices-advice](https://github.com/ices-advice). The stocks, their expert group and data category come from the [ICES Stock Database](https://sd.ices.dk). The individual assessments are listed under [TAF readiness](readiness.qmd).
 
 ```{r}
 #| include: false

@@ -17,7 +17,7 @@ The levels build on each other. An assessment can only reach level 2 after reach
 
 ### Level 1: code on GitHub
 
-The assessment has a repository in the [ices-taf](https://github.com/ices-taf) organisation containing its code. This is checked by looking for model scripts in the repository, `model.R`, any scripts named `model_*.R` and any R Markdown files named `model*.Rmd`, with more in them than the empty `model.R` a new TAF repository starts with.
+The assessment has a repository in the [ices-taf](https://github.com/ices-taf) organisation containing its code. This is checked by looking for model scripts in the repository, `model.R`, any scripts named `model_*.R` and any R Markdown files named `model*.Rmd`, or the same files named `method` in place of `model`, with more in them than the empty `model.R` a new TAF repository starts with.
 
 ### Level 2: passes the QC test
 
@@ -31,7 +31,7 @@ The code runs successfully from start to finish. This is the execution step in t
 
 ### Level 4: published and linked to advice
 
-The assessment is published in the [ices-advice](https://github.com/ices-advice) organisation and linked from the advice for the stock.
+The assessment is published in a public repository in the [ices-advice](https://github.com/ices-advice) organisation and linked from the advice for the stock.
 
 ## Current status
 
