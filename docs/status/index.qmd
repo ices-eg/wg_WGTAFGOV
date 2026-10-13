@@ -2,7 +2,7 @@
 title: "TAF repositories"
 ---
 
-Every analysis in TAF is a repository in the [ices-taf](https://github.com/ices-taf) organisation on GitHub. This page summarises all of them; [stock assessments](stock-assessments.qmd) looks at the assessments linked to advice.
+Every analysis in TAF is a repository in the [ices-taf](https://github.com/ices-taf) organisation on GitHub. This page summarises the repositories named for a year, `<year>_<name>`, and those of the workshops, `wk_WK<name>`. The other repositories in the organisation, such as the software and the templates, are left out. [Stock assessments](stock-assessments.qmd) looks at the assessments linked to advice.
 
 {{< include ../_generated/status-summary.md >}}
 
@@ -91,7 +91,7 @@ plot_ly(
 
 ## Repositories
 
-All the repositories, most recently updated first. Those marked with a lock are private, so their links only work for members of the organisation.
+The repositories, most recently updated first. Those marked with a lock are private, so their links only work for members of the organisation.
 
 ```{r}
 #| echo: false

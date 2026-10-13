@@ -42,13 +42,25 @@ stock_parts <- c("west", "south")
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
 
+# the repositories on the repositories page: named for a year, or wk_WK...
+listed_reg <- "^[0-9]{4}_|^wk_wk"
+
+# stock codes as they are written in the names of some repositories, and the
+# stock code that is meant
+stock_aliases <- c("cod.27.1-2coastN" = "cod.27.1-2.coastN")
+
+# the repositories of the management strategy evaluations, which are not named
+# for a year: wk_WKMSE..., wk_WKNSMSE... and WGHANSA_... They are given the
+# type mse and the year they were last pushed to.
+mse_reg <- "^(wk_wk(ns)?mse|wghansa_)"
+
 # other types of work to give a TAF readiness level to, in the groups they are
 # shown in. A repository named <year>_<name>_<type> is in a group by its type,
 # by the last part of its name, or by all of its name after the year.
 other_types <- list(
   "Mixed fisheries advice" = c("MixedFisheriesAdvice", "wgmixfish_accessions", "wgmixfish_methods"),
   "Benchmarks" = "benchmark",
-  "Reference points" = c("newref", "wkmfoa", "rebuild", "refpts"),
+  "Reference points" = c("newref", "wkmfoa", "rebuild", "refpts", "mse"),
   "Surveys" = c("survey", "acousticIndex", "stox")
 )
 
@@ -155,6 +167,9 @@ taf_assessments <- function(repos, stock_codes) {
   repos$year <- as.numeric(vapply(parts[shaped], "[", "", 2))
   repos$stock <- vapply(parts[shaped], "[", "", 3)
   repos$type <- "assessment"
+  # a stock code that is written differently in the name of a repository
+  alias <- repos$stock %in% names(stock_aliases)
+  repos$stock[alias] <- stock_aliases[repos$stock[alias]]
 
   # split off the part of the stock, if that leaves a valid stock code
   part_reg <- paste0("_(", paste(stock_parts, collapse = "|"), ")$")
@@ -351,6 +366,9 @@ build <- function() {
 
   # all repositories
   repos <- add_name_parts(org_repos("ices-taf"))
+  mse <- grepl(mse_reg, repos$name, ignore.case = TRUE)
+  repos$type[mse] <- "mse"
+  repos$year[mse] <- as.numeric(substr(repos$pushed[mse], 1, 4))
   advice <- add_name_parts(org_repos("ices-advice"))
 
   # TAF readiness level, see system/readiness-level.qmd
@@ -369,6 +387,9 @@ build <- function() {
 
   # the TAF stock assessment repositories
   taf_repos <- with_level(taf_assessments(repos, stock_codes))
+  # they are all of type assessment, whatever their name: the older stock
+  # codes, such as had-iceg, are not seen as a stock by add_name_parts()
+  repos$type[repos$name %in% taf_repos$name] <- "assessment"
 
   # the repositories of some other types of work, by the type in their name.
   # Read by status/readiness.qmd
@@ -451,7 +472,12 @@ build <- function() {
     row.names = FALSE
   )
 
-  # ---- summary tiles -------------------------------------------------------
+  # ---- the repositories page -----------------------------------------------
+
+  # status/index.qmd is of the repositories of TAF work: those named for a
+  # year and those of the workshops. The others in ices-taf, such as the
+  # software and the templates, are left out.
+  repos <- repos[grepl(listed_reg, repos$name, ignore.case = TRUE), ]
 
   n_private <- sum(repos$visibility != "public")
   n_active <- sum(as.Date(substr(repos$pushed, 1, 10)) > Sys.Date() - 365, na.rm = TRUE)
