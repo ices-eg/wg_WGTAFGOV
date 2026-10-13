@@ -34,6 +34,8 @@ The last column of the table is what was found of the link to GitHub in the [adv
 
 The green blocks in the panel of the not published are the published assessments of the year, drawn on top so that its bars show all the assessments of each year. The assessments with no level are left out of the chart to begin with: click **No level** in the legend to add them, and again to take them out. They are always in the table.
 
+Hold the pointer over a QC test result to see the checks that failed. The checks are also in a column of the table that is not shown to begin with: the search box looks in it, so typing the name of a check, such as `relative.paths`, lists the assessments that fail it, and the button above the table shows the column.
+
 Click a bar to list its assessments in the table below. To show them all again, use the button above the table or double-click the chart.
 
 ```{r}
@@ -49,11 +51,7 @@ show_all_button(shared, "Show all assessments")
 
 ```{r}
 #| echo: false
-DT::datatable(
-  shared,
-  rownames = FALSE, escape = FALSE,
-  options = list(pageLength = 25, order = list(list(0, "desc"), list(1, "asc")))
-)
+readiness_table(shared, order = list(list(0, "desc"), list(1, "asc")))
 ```
 
 ## Other repositories
@@ -99,7 +97,9 @@ other_listed <- data.frame(
   Group = other$group,
   Type = other$type,
   Level = other$level,
-  QC = ifelse(!other$qc_tested, "Not tested", ifelse(other$qc_passed, "Passed", "Failed"))
+  QC = qc_result(other),
+  "Failed checks" = failed_checks(other),
+  check.names = FALSE
 )
 names(other_listed)[6] <- "QC test"
 other_shared <- crosstalk::SharedData$new(other_listed)
@@ -178,9 +178,5 @@ show_all_button(other_shared, "Show all repositories")
 
 ```{r}
 #| echo: false
-DT::datatable(
-  other_shared,
-  rownames = FALSE, escape = FALSE,
-  options = list(pageLength = 25, order = list(list(0, "desc"), list(2, "asc"), list(1, "asc")))
-)
+readiness_table(other_shared, order = list(list(0, "desc"), list(2, "asc"), list(1, "asc")))
 ```

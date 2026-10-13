@@ -238,15 +238,21 @@ cached_model_scripts <- function(repos) {
 # it passed, either outright or failing only for having no SOFTWARE.bib file
 qc_results <- function(names) {
   qc <- jsonlite::fromJSON(qc_url, simplifyVector = FALSE)
-  passed <- vapply(qc, function(x) {
-    # a failed check with no name is still a failure
-    failed <- vapply(x$failed_checks, function(check) if (is.null(check)) NA_character_ else check, "")
+  # a failed check with no name is still a failure
+  failed <- lapply(qc, function(x) {
+    vapply(x$failed_checks, function(check) if (is.null(check)) NA_character_ else check, "")
+  })
+  passed <- mapply(function(x, failed) {
     isTRUE(x$passed) || setequal(failed, qc_no_software_bib)
-  }, TRUE)
+  }, qc, failed)
   i <- match(names, sub("^ices-taf_", "", vapply(qc, function(x) x$repository, "")))
   data.frame(
     qc_tested = !is.na(i),
     qc_passed = passed[i],
+    # the checks that failed, without the qc. they all start with
+    qc_failed = vapply(failed, function(x) {
+      paste(sub("^qc[.]", "", ifelse(is.na(x), "unnamed check", x)), collapse = ", ")
+    }, "")[i],
     qc_date = substr(vapply(qc, function(x) x$timestamp, ""), 1, 10)[i]
   )
 }
@@ -380,7 +386,7 @@ build <- function() {
   write.csv(
     other_repos[
       order(other_repos$group, other_repos$year, other_repos$name),
-      c("name", "year", "type", "group", "visibility", "pushed", "model_size", "has_model", "qc_tested", "qc_passed", "trl")
+      c("name", "year", "type", "group", "visibility", "pushed", "model_size", "has_model", "qc_tested", "qc_passed", "qc_failed", "trl")
     ],
     file.path(out_dir, "other-repos.csv"),
     row.names = FALSE
@@ -411,7 +417,7 @@ build <- function() {
   write.csv(
     taf_repos[
       order(taf_repos$year, taf_repos$stock),
-      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "qc_tested", "qc_passed", "qc_date", "trl", "published", "advice_url", "advice_status")
+      c("name", "year", "stock", "part", "visibility", "size", "pushed", "model_r", "model_size", "has_model", "qc_tested", "qc_passed", "qc_failed", "qc_date", "trl", "published", "advice_url", "advice_status")
     ],
     file.path(out_dir, "taf-repos.csv"),
     row.names = FALSE

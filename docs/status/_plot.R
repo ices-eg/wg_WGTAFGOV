@@ -46,6 +46,39 @@ show_all_button <- function(shared, label = "Show all") {
 
 # ---- TAF readiness ---------------------------------------------------------
 
+# the result of the QC test of each repository, with the checks that failed
+# shown when the pointer is over it
+qc_result <- function(repos) {
+  result <- ifelse(!repos$qc_tested, "Not tested", ifelse(repos$qc_passed, "Passed", "Failed"))
+  failed <- failed_checks(repos)
+  ifelse(
+    nzchar(failed),
+    sprintf("<span title=\"Failed: %s\">%s</span>", htmltools::htmlEscape(failed, attribute = TRUE), result),
+    result
+  )
+}
+
+# the checks of the QC test that each repository failed
+failed_checks <- function(repos) ifelse(is.na(repos$qc_failed), "", repos$qc_failed)
+
+# a table of repositories with their failed checks in the last column. The
+# column is not shown, to keep the table narrow, but is searched, and a
+# button above the table shows and hides it.
+readiness_table <- function(shared, order) {
+  last <- ncol(shared$origData()) - 1
+  DT::datatable(
+    shared,
+    rownames = FALSE, escape = FALSE,
+    extensions = "Buttons",
+    options = list(
+      pageLength = 25, order = order,
+      dom = "Blfrtip",
+      buttons = list(list(extend = "columnToggle", columns = last, text = "Show or hide the failed checks")),
+      columnDefs = list(list(visible = FALSE, targets = last))
+    )
+  )
+}
+
 readiness_levels <- c("No level", paste("Level", 1:4))
 readiness_colours <- setNames(c("#d5d4ce", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"), readiness_levels)
 
@@ -62,7 +95,7 @@ readiness_assessments <- function(repos) {
     ),
     Level = factor(ifelse(is.na(repos$trl), 0, repos$trl), 0:4, readiness_levels),
     Published = ifelse(repos$published, "Published", "Not published"),
-    QC = ifelse(!repos$qc_tested, "Not tested", ifelse(repos$qc_passed, "Passed", "Failed"))
+    QC = qc_result(repos)
   )
   names(assessments)[5] <- "QC test"
   # what was found of the link in the advice sheet of the stock and year, see
@@ -75,6 +108,7 @@ readiness_assessments <- function(repos) {
     nothing_to_say, "",
     sprintf("<a href=\"%s\">%s</a>", repos$advice_url, repos$advice_status)
   )
+  assessments[["Failed checks"]] <- failed_checks(repos)
   assessments
 }
 
