@@ -75,6 +75,7 @@ Click a bar to list its advice sheets in the table below. To show them all again
 
 ```{r}
 #| echo: false
+#| warning: false
 # the advice sheets, shared by the chart and the table so that clicking a bar
 # filters the table
 link <- function(url, text) sprintf("<a href=\"%s\">%s</a>", url, htmltools::htmlEscape(text))

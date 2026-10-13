@@ -51,6 +51,7 @@ Click a bar to list the repositories of that type in the table below. To show th
 
 ```{r}
 #| echo: false
+#| warning: false
 # the repositories, shared by the chart and the table so that clicking a bar
 # filters the table
 lock <- "<i class=\"bi bi-lock-fill\" title=\"Private\"></i><span class=\"visually-hidden\">private</span>"

@@ -47,6 +47,7 @@ The stock assessment repositories by year and [TAF readiness level](system/readi
 
 ```{r}
 #| echo: false
+#| warning: false
 readiness_chart(readiness_assessments(repos))
 ```
 

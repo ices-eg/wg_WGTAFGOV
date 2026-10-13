@@ -22,7 +22,8 @@ taf_layout <- function(p, ...) {
 # the bars of a chart, each with the keys of the rows of a table in its "key"
 # column, linked to the table so that clicking a bar filters it. A set of bars
 # with only one bar in it is not linked properly by plotly, so is given a
-# second one with no height, which is not drawn.
+# second one with no height, which is not drawn. Plotly warns that it is
+# "ignoring 1 observations", so the charts are drawn with warning: false.
 linked_bars <- function(bars, shared, n = "n") {
   if (nrow(bars) == 1) {
     empty <- bars

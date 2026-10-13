@@ -42,13 +42,14 @@ stock_parts <- c("west", "south")
 # an untouched skeleton model.R is 94 bytes of comments and setup
 min_model_size <- 100
 
-# other types of work to give a TAF readiness level to, by the type in the
-# name of the repository, <year>_<name>_<type>, in the groups they are shown in
+# other types of work to give a TAF readiness level to, in the groups they are
+# shown in. A repository named <year>_<name>_<type> is in a group by its type,
+# by the last part of its name, or by all of its name after the year.
 other_types <- list(
-  "Mixed fisheries advice" = "MixedFisheriesAdvice",
+  "Mixed fisheries advice" = c("MixedFisheriesAdvice", "wgmixfish_accessions", "wgmixfish_methods"),
   "Benchmarks" = "benchmark",
-  "Reference points" = c("newref", "wkmfoa"),
-  "Surveys" = c("survey", "acousticIndex")
+  "Reference points" = c("newref", "wkmfoa", "rebuild", "refpts"),
+  "Surveys" = c("survey", "acousticIndex", "stox")
 )
 
 # the model scripts of each repository, kept from one run to the next so that
@@ -365,10 +366,16 @@ build <- function() {
 
   # the repositories of some other types of work, by the type in their name.
   # Read by status/readiness.qmd
-  other_repos <- repos[repos$type %in% unlist(other_types), ]
-  other_repos$group <- names(other_types)[
-    vapply(other_repos$type, function(type) which(vapply(other_types, function(x) type %in% x, TRUE)), 1L)
-  ]
+  group_of <- function(name, type) {
+    known_as <- c(type, sub("^.*_", "", name), sub("^[0-9]{4}_", "", name))
+    group <- names(other_types)[vapply(other_types, function(x) any(known_as %in% x), TRUE)]
+    if (length(group)) group[1] else NA_character_
+  }
+  dated <- !is.na(repos$year)
+  repos$group[dated] <- mapply(group_of, repos$name[dated], repos$type[dated])
+  other_repos <- repos[!is.na(repos$group), ]
+  # the assessments are not other work, whatever follows in their name
+  other_repos <- other_repos[!other_repos$name %in% taf_repos$name, ]
   other_repos <- with_level(other_repos)
   write.csv(
     other_repos[

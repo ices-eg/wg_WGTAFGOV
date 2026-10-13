@@ -38,6 +38,7 @@ Click a bar to list its assessments in the table below. To show them all again, 
 
 ```{r}
 #| echo: false
+#| warning: false
 readiness_chart(assessments, shared)
 ```
 
@@ -88,6 +89,7 @@ knitr::kable(
 
 ```{r}
 #| echo: false
+#| warning: false
 #| fig-height: 7
 # the repositories, shared by the chart and the table so that clicking a bar
 # filters the table
