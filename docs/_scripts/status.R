@@ -264,8 +264,11 @@ qc_results <- function(names) {
   data.frame(
     qc_tested = !is.na(i),
     qc_passed = passed[i],
-    # the checks that failed, without the qc. they all start with
+    # the checks that failed, without the qc. they all start with. Having no
+    # SOFTWARE.bib file is not counted as a failure, so its two checks are
+    # left out; the second on its own is of a file that is there but not valid.
     qc_failed = vapply(failed, function(x) {
+      if ("qc.software.bib.exists" %in% x) x <- x[!x %in% qc_no_software_bib]
       paste(sub("^qc[.]", "", ifelse(is.na(x), "unnamed check", x)), collapse = ", ")
     }, "")[i],
     qc_date = substr(vapply(qc, function(x) x$timestamp, ""), 1, 10)[i]
