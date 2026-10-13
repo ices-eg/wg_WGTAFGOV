@@ -60,13 +60,35 @@ DT::datatable(
 The readiness level of the repositories of four other types of work, by the year in their name. The levels are found in the same way as for the assessments: level 1 for a repository with some modelling in it, and level 2 for one that also passes the QC test. These repositories are not published themselves, so there is no panel for the published.
 
 ```{r}
-#| echo: false
-#| fig-height: 7
+#| include: false
 other <- read.csv("../_generated/other-repos.csv")
 other$level <- factor(ifelse(is.na(other$trl), 0, other$trl), 0:4, readiness_levels)
 # in the order of the panels
 other$group <- factor(other$group, unique(c("Mixed fisheries advice", "Benchmarks", "Reference points", "Surveys", other$group)))
+# the levels in the order they are stacked and listed, those with no level last
+stacked <- c(setdiff(levels(droplevels(other$level)), "No level"), "No level")
+```
 
+```{r}
+#| echo: false
+types <- tapply(other$type, other$group, function(x) paste0("`", sort(unique(x)), "`", collapse = ", "))
+summary <- as.data.frame.matrix(table(other$group, droplevels(other$level))[, stacked, drop = FALSE])
+knitr::kable(
+  data.frame(
+    Group = rownames(summary),
+    Types = unname(types[rownames(summary)]),
+    Repositories = rowSums(summary),
+    summary,
+    "Not tested" = as.vector(table(other$group, !other$qc_tested)[rownames(summary), "TRUE"]),
+    check.names = FALSE
+  ),
+  row.names = FALSE, align = c("l", "l", rep("r", ncol(summary) + 2))
+)
+```
+
+```{r}
+#| echo: false
+#| fig-height: 7
 # the repositories, shared by the chart and the table so that clicking a bar
 # filters the table
 other_listed <- data.frame(
@@ -84,7 +106,6 @@ other_shared <- crosstalk::SharedData$new(other_listed)
 # hand so that a clicked bar is highlighted in place, each with the keys of
 # its repositories. Those with no level are at the top of a bar, and left
 # out until clicked in the legend, as in the chart of the assessments.
-stacked <- c(setdiff(levels(droplevels(other$level)), "No level"), "No level")
 bars <- aggregate(
   list(key = other_shared$key()),
   list(level = other$level, year = other$year, group = other$group),
@@ -147,22 +168,6 @@ The repositories are those named `<year>_<name>_<type>` with these types. The ch
 
 Click a bar to list its repositories in the table at the end of the page. To show them all again, use the button above the table or double-click the chart.
 
-```{r}
-#| echo: false
-types <- tapply(other$type, other$group, function(x) paste0("`", sort(unique(x)), "`", collapse = ", "))
-summary <- as.data.frame.matrix(table(other$group, droplevels(other$level))[, stacked, drop = FALSE])
-knitr::kable(
-  data.frame(
-    Group = rownames(summary),
-    Types = unname(types[rownames(summary)]),
-    Repositories = rowSums(summary),
-    summary,
-    "Not tested" = as.vector(table(other$group, !other$qc_tested)[rownames(summary), "TRUE"]),
-    check.names = FALSE
-  ),
-  row.names = FALSE, align = c("l", "l", rep("r", ncol(summary) + 2))
-)
-```
 
 ```{r}
 #| echo: false
