@@ -1,0 +1,25 @@
+{
+  "year": 2026,
+  "countries": ["DK", "ES", "GB-NIR", "GB-SCT", "LT", "LV", "NO"],
+  "stocks": [
+    "bll.27.3a47de",
+    "her.27.25-2932",
+    "mac.27.nea",
+    "pil.27.8c9a",
+    "ple.27.420",
+    "sol.27.7fg",
+    "sol.27.8ab",
+    "tur.27.4",
+    "whg.27.7b-ce-k"
+  ],
+  "links": [
+    {
+      "country": "LT",
+      "stock": "her.27.25-2932",
+      "status": "not connected",
+      "note": "The LT repository has estimation code for this stock."
+    }
+  ],
+  "stock_links": [],
+  "repositories": {}
+}

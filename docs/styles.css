@@ -27,3 +27,44 @@ div.dt-buttons > button.dt-button:active {
   border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 0.875rem;
 }
 div.dt-buttons > button.dt-button:hover { background: var(--bs-secondary) !important; color: #fff !important; }
+
+/* RDBES workflow diagram, drawn by status/_rdbes.R */
+.rdbes-diagram { overflow-x: auto; margin: 1rem 0; }
+.rdbes-diagram svg { display: block; width: 100%; min-width: 760px; height: auto; font-family: inherit; }
+.rdbes-diagram .heading { text-anchor: middle; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--bs-secondary-color); }
+.rdbes-diagram .db rect { fill: #e4e2dc; stroke: #8c8a83; stroke-width: 1.5; }
+.rdbes-diagram .db text { text-anchor: middle; font-size: 12px; font-weight: 600; letter-spacing: 0.3em; fill: #5f5d57; }
+.rdbes-diagram .node rect { fill: var(--bs-body-bg); stroke: #8c8a83; stroke-width: 1.5; }
+.rdbes-diagram .node.s-none rect { stroke-dasharray: 4 3; fill: none; }
+.rdbes-diagram .node-name { font-size: 13px; font-weight: 600; fill: var(--bs-body-color); }
+.rdbes-diagram .node-status { font-size: 11px; fill: var(--bs-secondary-color); }
+.rdbes-diagram a:focus-visible rect { stroke: var(--bs-primary); stroke-width: 3; }
+.rdbes-diagram .lamp, .rdbes-legend .lamp { stroke: #5f5d57; stroke-width: 1; }
+.s-none.lamp, .s-none .lamp { fill: #d5d4ce; }
+.s-l0.lamp, .s-l0 .lamp { fill: #fbe3b0; }
+.s-l1.lamp, .s-l1 .lamp { fill: #f5b84a; }
+.s-l2.lamp, .s-l2 .lamp { fill: #d98a0b; }
+.s-runs.lamp, .s-runs .lamp, .s-published .lamp { fill: #2e9e5b; }
+.s-failing.lamp, .s-failing .lamp { fill: #d64545; }
+.rdbes-diagram .pipe-bg, .rdbes-legend .pipe-bg { fill: none; stroke: #e4e2dc; stroke-width: 9; stroke-linecap: round; }
+.pipe { fill: none; stroke-width: 3; }
+.pipe.s-connected { stroke: #2e9e5b; stroke-dasharray: 10 6; animation: rdbes-flow 1.2s linear infinite; }
+.pipe.s-partial { stroke: #e0a020; stroke-dasharray: 8 5; }
+.pipe.s-not-connected { stroke: #a9a79f; stroke-dasharray: 2 5; stroke-linecap: round; }
+.pipe.s-broken { stroke: #d64545; }
+.rdbes-diagram .pipe-break { text-anchor: middle; font-size: 15px; font-weight: 700; fill: #d64545; }
+@keyframes rdbes-flow { to { stroke-dashoffset: -16; } }
+@media (prefers-reduced-motion: reduce) { .pipe.s-connected { animation: none; } }
+.rdbes-diagram svg.picked [data-stock]:not(.on), .rdbes-diagram svg.picked [data-country]:not(.on) { opacity: 0.2; }
+.rdbes-diagram svg [data-stock], .rdbes-diagram svg [data-country] { transition: opacity 0.15s; }
+.rdbes-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; font-size: 0.875rem; margin-bottom: 1rem; }
+.rdbes-legend > div { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; }
+.rdbes-legend .item { display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+.rdbes-matrix th, .rdbes-matrix td { text-align: center; vertical-align: middle; }
+.rdbes-matrix th[scope="row"] { text-align: left; }
+.rdbes-matrix thead th { font-weight: 600; font-size: 0.8rem; white-space: nowrap; }
+.link-mark { font-size: 1.1rem; line-height: 1; }
+.link-mark.s-connected { color: #2e9e5b; }
+.link-mark.s-partial { color: #c98a10; }
+.link-mark.s-not-connected { color: #8c8a83; }
+.link-mark.s-broken { color: #d64545; }

@@ -84,6 +84,12 @@ qc_url <- "https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/ma
 # the file is there but not valid, which does not.
 qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
+# the countries and stocks of the RDBES workflow, see status/rdbes.qmd
+rdbes_file <- "_data/rdbes.json"
+# a new TAF repository starts with R scripts of about 100 bytes: one larger
+# than this has some code in it
+min_script_size <- 150
+
 dir.create(out_dir, showWarnings = FALSE)
 
 fragments <- c("status-summary")
@@ -345,6 +351,40 @@ advice_sheets <- function(advice_repos) {
   sheets
 }
 
+# the national estimation and stock coordination repositories of the RDBES
+# workflow, with their TAF readiness level. Their code is in folders, by
+# expert group or by stock, so all the R scripts in them are looked at, not
+# only those at the top level with model or method in their name.
+rdbes_repos <- function(repos) {
+  rdbes <- jsonlite::fromJSON(rdbes_file)
+  out <- data.frame(name = c(
+    sprintf("%d_all_RDBES_%s", rdbes$year, rdbes$countries),
+    sprintf("%d_%s_RDBES_combined", rdbes$year, rdbes$stocks)
+  ))
+  i <- match(out$name, repos$name)
+  out$exists <- !is.na(i)
+  out$visibility <- repos$visibility[i]
+  out$pushed <- repos$pushed[i]
+  out$code_size <- vapply(seq_len(nrow(out)), function(j) {
+    if (!out$exists[j]) {
+      return(NA_real_)
+    }
+    # an empty repository has no tree
+    tree <- gh_api(sprintf("repos/ices-taf/%s/git/trees/HEAD?recursive=1", out$name[j]))$tree
+    size <- vapply(tree, function(f) {
+      script <- f$type == "blob" && grepl("[.](r|rmd)$", tolower(f$path))
+      if (script && f$size > min_script_size) as.numeric(f$size) else 0
+    }, 1)
+    sum(size)
+  }, 1)
+  out$has_code <- !is.na(out$code_size) & out$code_size > 0
+  out$trl <- ifelse(out$has_code, 1, NA)
+  out <- cbind(out, qc_results(out$name))
+  out$trl[out$has_code & out$qc_passed %in% TRUE] <- 2
+  message(sum(out$exists), " of ", nrow(out), " RDBES repositories, ", sum(out$has_code), " with code")
+  out
+}
+
 category <- function(data_category) {
   x <- floor(suppressWarnings(as.numeric(data_category)))
   ifelse(x < 2, "Category 1", "Categories 2-6")
@@ -415,6 +455,9 @@ build <- function() {
     file.path(out_dir, "other-repos.csv"),
     row.names = FALSE
   )
+  # the RDBES workflow. Read by status/rdbes.qmd
+  write.csv(rdbes_repos(repos), file.path(out_dir, "rdbes-repos.csv"), row.names = FALSE)
+
   # published: the stock has a public repository for the year in ices-advice.
   # A private one is not counted: the readers of the advice cannot open it,
   # and it can only be seen by a run with access to it. This is recorded

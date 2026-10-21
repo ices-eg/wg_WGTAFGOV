@@ -1,0 +1,127 @@
+---
+title: "RDBES workflow"
+---
+
+TAF analyses can be chained together, so that the results of one are the data of the next. The RDBES workflow is the first large example:
+
+1. A **national estimation** repository for each country, `<year>_all_RDBES_<country>`, computes the national estimates of catches from the detailed national data in the RDBES database. It answers a data call by uploading its estimates to the RDBES through the API.
+2. A **stock coordination** repository for each stock, `<year>_<stock>_RDBES_combined`, downloads the estimates of the countries from the RDBES and combines them. It uploads the results for the stock to the RDBES.
+3. The **stock assessment** repository of each stock, `<year>_<stock>_assessment`, downloads the stock results from the RDBES and runs the assessment that the advice on catches is based on.
+
+Nine stocks have been chosen to test the workflow. Not all of its parts work yet. This page shows how far each part has come and which are connected.
+
+```{r}
+#| include: false
+source("_rdbes.R")
+```
+
+```{r}
+#| echo: false
+rdbes_summary()
+```
+
+## The workflow in `r year`
+
+Each box is a repository, or the advice sheet of a stock. Each line is a connection, through the RDBES database. Hold the pointer over a country or a stock to pick out its part of the workflow, and over a box or a line to see what is known of it. Click a box to go to its repository.
+
+```{r}
+#| echo: false
+rdbes_diagram()
+```
+
+```{r}
+#| echo: false
+rdbes_legend()
+```
+
+```{r}
+#| echo: false
+#| results: asis
+unrecorded <- setdiff(stocks, links$stock)
+if (length(unrecorded)) {
+  cat(
+    "::: {.callout-note}\n",
+    "No countries are recorded yet for ", length(unrecorded), " of the ", length(stocks),
+    " stocks, so there are no lines to them from the countries.\n:::\n",
+    sep = ""
+  )
+}
+```
+
+## Countries and stocks
+
+The connection from each country to each stock it provides estimates for. A blank cell is a stock the country is not recorded as providing estimates for.
+
+```{r}
+#| echo: false
+rdbes_matrix()
+```
+
+## Stocks
+
+```{r}
+#| echo: false
+rdbes_stocks()
+```
+
+## How the status is decided
+
+The status of the **repositories** follows the [TAF readiness level](../system/readiness-level.qmd):
+
+- **No repository**: there is no repository of that name in [ices-taf](https://github.com/ices-taf).
+- **No level**: the repository is there but has no code in it yet. For the national estimation and stock coordination repositories this means no R script or R Markdown file anywhere in the repository larger than the empty scripts a new TAF repository starts with. Their code is in folders, by expert group or by stock, so the test is not the one for the assessments, which looks for model scripts at the top level.
+- **Level 1**: the code is on GitHub.
+- **Level 2**: the code passes the [QC test](https://github.com/ices-tools-prod/taf-qc-dashboard).
+- **Runs** and **Failing**: there is no automatic test of whether the code runs yet, so these are recorded by hand.
+
+The status of the **connections** is recorded by hand:
+
+- **Connected**: the data pass between the two automatically, through the RDBES API. From a country to a stock, this means the national estimation repository uploads its estimates for the stock and the stock coordination repository downloads them.
+- **Partly connected**: the data pass by hand, or only some of them do.
+- **Not connected**: no data pass between the two yet.
+- **Broken**: the two used to be connected but are not now.
+
+The connection from an assessment to the advice is the link from the [advice sheet](advice-sheets.qmd) to the published code of the assessment: connected when the link is correct, and partly connected when there is a link that is wrong.
+
+A stock is **connected end to end** when every part of its chain runs and every connection in it is made.
+
+The countries, the stocks, the connections and the statuses recorded by hand are in [`docs/_data/rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes.json).
+
+```{=html}
+<script>
+// pick out the part of the workflow of a country or a stock: the stock and
+// the countries it is connected to, or the country and the stocks it is
+// connected to
+document.addEventListener("DOMContentLoaded", () => {
+  const svg = document.querySelector(".rdbes-diagram svg");
+  if (!svg) return;
+  const pipes = [...svg.querySelectorAll(".pipe-g[data-country]")];
+  const parts = [...svg.querySelectorAll("[data-stock], [data-country]")];
+  const show = (el) => {
+    let stocks, countries;
+    if (el.dataset.country && !el.dataset.stock) {
+      countries = new Set([el.dataset.country]);
+      stocks = new Set(pipes.filter((p) => p.dataset.country === el.dataset.country).map((p) => p.dataset.stock));
+    } else {
+      stocks = new Set([el.dataset.stock]);
+      countries = new Set(pipes.filter((p) => p.dataset.stock === el.dataset.stock).map((p) => p.dataset.country));
+    }
+    for (const part of parts) {
+      const { stock, country } = part.dataset;
+      const on = stock ? stocks.has(stock) && (!country || countries.has(country)) : countries.has(country);
+      part.classList.toggle("on", on);
+    }
+    svg.classList.add("picked");
+  };
+  const clear = () => svg.classList.remove("picked");
+  for (const part of parts) {
+    if (part.classList.contains("pipe-g") && part.dataset.country) continue;
+    const target = part.closest("a") || part;
+    target.addEventListener("mouseenter", () => show(part));
+    target.addEventListener("focus", () => show(part));
+    target.addEventListener("mouseleave", clear);
+    target.addEventListener("blur", clear);
+  }
+});
+</script>
+```
