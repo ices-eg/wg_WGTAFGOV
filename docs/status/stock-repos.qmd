@@ -101,7 +101,7 @@ A connection is found in the code of the repository at its end:
 - Through the RDBES, as on the [RDBES workflow](rdbes.qmd) page: **connected** when the first repository uploads to the RDBES and the second downloads from it, and **partly connected** when only one of them does.
 - Otherwise, **connected** when the `DATA.bib` of the second repository, or a script of an entry in it with `source = {script}`, names the first repository. Data copied in by hand, with `source = {file}`, does not show the connection.
 
-The mixed fisheries and national estimation repositories are not named for a stock. They are shown for a stock when they take data from one of its repositories or give data to one, when the country is recorded for the stock in [`rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes.json), or when the stock is listed for the repository under `members` in [`repo-types.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/repo-types.json). That file also sets the types of repository, by the patterns of their names, and the connections expected between them.
+The mixed fisheries and national estimation repositories are not named for a stock. They are shown for a stock when they take data from one of its repositories or give data to one, when the country has data for the stock in [`rdbes-stock-countries.csv`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes-stock-countries.csv), or when the stock is listed for the repository under `members` in [`repo-types.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/repo-types.json). That file also sets the types of repository, by the patterns of their names, and the connections expected between them.
 
 ```{=html}
 <script>
@@ -176,6 +176,16 @@ document.addEventListener("DOMContentLoaded", () => {
           (t.stocks === "members" && ((types.members || {})[r.name] || []).includes(stock));
         const shares = sourcesOf(r).some((s) => own.has(s)) || ownSources.has(r.name);
         if (recorded || shares) add(t, x);
+      }
+      // a country with data for the stock whose repository is not there yet
+      if (t.stocks === "rdbes" && rdbes.year === year) {
+        for (const l of (rdbes.links || []).filter((l) => l.stock === stock)) {
+          const name = `${year}_all_RDBES_${l.country}`;
+          if (!taken.has(name)) {
+            taken.add(name);
+            nodes.push({ id: name, type: t.id, repo: null, short: l.country, year });
+          }
+        }
       }
     }
     return nodes;

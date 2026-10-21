@@ -90,6 +90,7 @@ sources_file <- "_data/data-sources.csv"
 
 # the countries and stocks of the RDBES workflow, see status/rdbes.qmd
 rdbes_file <- "_data/rdbes.json"
+stock_countries_file <- "_data/rdbes-stock-countries.csv"
 # a new TAF repository starts with R scripts of about 100 bytes: one larger
 # than this has some code in it
 min_script_size <- 150
@@ -432,8 +433,18 @@ rdbes_ports <- function(repo, paths) {
 # coordination repositories is in folders, by expert group or by stock, so
 # all the R scripts in them are looked at for the level, not only those at
 # the top level with model or method in their name.
+# the countries with data for each stock of the RDBES workflow: one row for
+# each stock, with the countries separated by commas
+read_stock_countries <- function(file) {
+  x <- read.csv(file, stringsAsFactors = FALSE)
+  countries <- strsplit(x$CountriesWithData, "\\s*,\\s*")
+  data.frame(stock = rep(x$StockCode, lengths(countries)), country = trimws(unlist(countries)))
+}
+
 rdbes_repos <- function(repos) {
   rdbes <- jsonlite::fromJSON(rdbes_file)
+  # the countries named, and those with data for a stock
+  rdbes$countries <- sort(union(rdbes$countries, read_stock_countries(stock_countries_file)$country))
   # the assessment of a stock: <year>_<stock>_assessment, or failing that
   # <year>_<stock>, as on the readiness page
   assessment <- vapply(rdbes$stocks, function(stock) {

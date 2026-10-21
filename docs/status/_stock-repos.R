@@ -37,10 +37,23 @@ stock_repos <- data.frame(
   sources = ifelse(is.na(k) | is.na(sources$sources[k]), "", sources$sources[k])
 )
 
+# the countries with data for each stock of the RDBES workflow: one row for
+# each stock, with the countries separated by commas
+read_stock_countries <- function(file) {
+  x <- read.csv(file, stringsAsFactors = FALSE)
+  countries <- strsplit(x$CountriesWithData, "\\s*,\\s*")
+  data.frame(stock = rep(x$StockCode, lengths(countries)), country = trimws(unlist(countries)))
+}
+
+# the countries with data for each stock, which the national estimation
+# repositories are shown for
+rdbes <- jsonlite::fromJSON("../_data/rdbes.json", simplifyVector = FALSE)
+rdbes$links <- read_stock_countries("../_data/rdbes-stock-countries.csv")
+
 payload <- list(
   repos = stock_repos,
   types = jsonlite::fromJSON("../_data/repo-types.json", simplifyVector = FALSE),
-  rdbes = jsonlite::fromJSON("../_data/rdbes.json", simplifyVector = FALSE),
+  rdbes = rdbes,
   updated = format(file.mtime("../_generated/repos.csv"), "%e %B %Y")
 )
 

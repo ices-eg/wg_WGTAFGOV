@@ -6,8 +6,19 @@ rdbes_repos <- read.csv("../_generated/rdbes-repos.csv")
 taf_repos <- read.csv("../_generated/taf-repos.csv")
 sheets <- read.csv("../_generated/advice-sheets.csv")
 
+# the countries with data for each stock of the RDBES workflow: one row for
+# each stock, with the countries separated by commas
+read_stock_countries <- function(file) {
+  x <- read.csv(file, stringsAsFactors = FALSE)
+  countries <- strsplit(x$CountriesWithData, "\\s*,\\s*")
+  data.frame(stock = rep(x$StockCode, lengths(countries)), country = trimws(unlist(countries)))
+}
+
+pairs <- read_stock_countries("../_data/rdbes-stock-countries.csv")
+
 year <- rdbes$year
-countries <- rdbes$countries
+# the countries named, and those with data for a stock
+countries <- sort(union(rdbes$countries, pairs$country))
 stocks <- rdbes$stocks
 
 esc <- function(x) htmltools::htmlEscape(x, attribute = TRUE)
@@ -130,11 +141,14 @@ connection <- function(from, to, status = NA) {
   list(key = key, found = paste(c(said(from, "uploads", from$upload), said(to, "downloads", to$download), sandbox), collapse = ". "))
 }
 
-# the connections from the countries to the stocks: only those recorded
-links <- if (length(rdbes$links)) as.data.frame(rdbes$links) else data.frame(country = character(), stock = character())
-if (is.null(links$status)) links$status <- NA
-if (is.null(links$note)) links$note <- NA
-links <- links[links$country %in% countries & links$stock %in% stocks, ]
+# the connections from the countries to the stocks: those with data, from
+# _data/rdbes-stock-countries.csv, with any status or note recorded by hand
+# for them in _data/rdbes.json
+links <- pairs[pairs$stock %in% stocks, ]
+set <- if (length(rdbes$links)) as.data.frame(rdbes$links) else data.frame(country = character(), stock = character())
+i <- match(paste(links$country, links$stock), paste(set$country, set$stock))
+links$status <- if (is.null(set$status)) NA else set$status[i]
+links$note <- if (is.null(set$note)) NA else set$note[i]
 found <- lapply(seq_len(nrow(links)), function(i) {
   connection(
     national[match(links$country[i], national$country), ],
@@ -207,10 +221,12 @@ width <- 1016
 top <- 44
 row_h <- 58
 node_h <- 44
-height <- top + length(stocks) * row_h
+# as many rows as the longer of the two lists, the other spread over them
+rows <- max(length(stocks), length(countries))
+height <- top + rows * row_h
 
-stock_y <- setNames(top + (seq_along(stocks) - 0.5) * row_h, stocks)
-country_y <- setNames(top + (seq_along(countries) - 0.5) * (length(stocks) * row_h / length(countries)), countries)
+stock_y <- setNames(top + (seq_along(stocks) - 0.5) * (rows * row_h / length(stocks)), stocks)
+country_y <- setNames(top + (seq_along(countries) - 0.5) * (rows * row_h / length(countries)), countries)
 
 node_svg <- function(column, y, label, node, data) {
   x <- col[[column]][1]

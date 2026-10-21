@@ -20,12 +20,7 @@
     "tur.27.4",
     "whg.27.7b-ce-k"
   ],
-  "links": [
-    {
-      "country": "LT",
-      "stock": "her.27.25-2932"
-    }
-  ],
+  "links": [],
   "stock_links": [],
   "repositories": {}
 }
