@@ -22,8 +22,11 @@ rdbes_summary()
 
 ## The workflow in `r year`
 
-Each box is a repository, or the advice sheet of a stock. Each line is a connection, through the RDBES database. Hold the pointer over a country or a stock to pick out its part of the workflow, and over a box or a line to see what is known of it. Click a box to go to its repository.
+Each box is a repository, or the advice sheet of a stock. The small square on the left of a box is filled when its code downloads from the RDBES, and the one on the right when its code uploads to it. Each line is a connection, through the RDBES database. Hold the pointer over a country or a stock to pick out its part of the workflow, and over a box or a line to see what is known of it. Click a box to go to its repository.
 
+<button type="button" class="btn btn-sm btn-outline-secondary mb-2" data-bs-toggle="modal" data-bs-target="#rdbes-modal"><i class="bi bi-arrows-fullscreen"></i> Full screen</button>
+
+::: {#rdbes-home}
 ```{r}
 #| echo: false
 rdbes_diagram()
@@ -32,6 +35,21 @@ rdbes_diagram()
 ```{r}
 #| echo: false
 rdbes_legend()
+```
+:::
+
+```{=html}
+<div class="modal fade" id="rdbes-modal" tabindex="-1" aria-labelledby="rdbes-modal-title" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="rdbes-modal-title">The RDBES workflow</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="rdbes-modal-body"></div>
+    </div>
+  </div>
+</div>
 ```
 
 ```{r}
@@ -64,6 +82,15 @@ rdbes_matrix()
 rdbes_stocks()
 ```
 
+## Connections found in the code
+
+The files in each repository that download from the RDBES and that upload to it.
+
+```{r}
+#| echo: false
+rdbes_found()
+```
+
 ## How the status is decided
 
 The status of the **repositories** follows the [TAF readiness level](../system/readiness-level.qmd):
@@ -74,18 +101,27 @@ The status of the **repositories** follows the [TAF readiness level](../system/r
 - **Level 2**: the code passes the [QC test](https://github.com/ices-tools-prod/taf-qc-dashboard).
 - **Runs** and **Failing**: there is no automatic test of whether the code runs yet, so these are recorded by hand.
 
-The status of the **connections** is recorded by hand:
+The **connections** are found in the code of the repositories, which is read from GitHub each night:
 
-- **Connected**: the data pass between the two automatically, through the RDBES API. From a country to a stock, this means the national estimation repository uploads its estimates for the stock and the stock coordination repository downloads them.
-- **Partly connected**: the data pass by hand, or only some of them do.
-- **Not connected**: no data pass between the two yet.
-- **Broken**: the two used to be connected but are not now.
+- A repository **downloads** from the RDBES when its `boot/DATA.bib` has an entry with `source = {script}` whose script, `boot/<entry>.R`, calls `icesRDBES::rdbes_download_data()`.
+- A repository **uploads** to the RDBES when its `output.R` or `report.R`, or a script they `source()`, calls `icesRDBES::rdbes_upload_data()`. Upload code in a script that `output.R` and `report.R` do not source is not counted, because it is not part of the TAF run.
+- A repository can hold several TAF projects in folders, such as one for each expert group. Each project, with its own `boot/DATA.bib`, `output.R` and `report.R`, is looked at.
+- Calls in comments are not counted. A repository that calls `icesRDBES::use_sboxrdbes()` uses the RDBES sandbox, which is shown in the table above.
+
+From these:
+
+- **Connected**: the code of the first repository uploads to the RDBES and the code of the second downloads from it.
+- **Partly connected**: only one of the two does.
+- **Not connected**: neither does.
+- **Broken**: recorded by hand, for a connection that used to work but does not now.
+
+This shows that the code to make a connection is there, not that it runs, or that what is downloaded is what the other repository uploaded, for the right country and stock. Better ways to tell are still to be worked out.
 
 The connection from an assessment to the advice is the link from the [advice sheet](advice-sheets.qmd) to the published code of the assessment: connected when the link is correct, and partly connected when there is a link that is wrong.
 
 A stock is **connected end to end** when every part of its chain runs and every connection in it is made.
 
-The countries, the stocks, the connections and the statuses recorded by hand are in [`docs/_data/rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes.json).
+The countries, the stocks, which countries provide estimates for which stocks, and the statuses recorded by hand are in [`docs/_data/rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes.json).
 
 ```{=html}
 <script>
@@ -114,6 +150,16 @@ document.addEventListener("DOMContentLoaded", () => {
     svg.classList.add("picked");
   };
   const clear = () => svg.classList.remove("picked");
+  // full screen: the diagram and its key are moved into the dialog and back,
+  // so that picking out a part still works
+  const modal = document.getElementById("rdbes-modal");
+  const home = document.getElementById("rdbes-home");
+  const body = document.getElementById("rdbes-modal-body");
+  const moved = [...home.children];
+  // a dialog inside the page can be caught by the layout around it
+  document.body.append(modal);
+  modal.addEventListener("show.bs.modal", () => body.append(...moved));
+  modal.addEventListener("hidden.bs.modal", () => home.append(...moved));
   for (const part of parts) {
     if (part.classList.contains("pipe-g") && part.dataset.country) continue;
     const target = part.closest("a") || part;

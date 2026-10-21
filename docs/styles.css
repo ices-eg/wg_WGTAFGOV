@@ -34,11 +34,11 @@ div.dt-buttons > button.dt-button:hover { background: var(--bs-secondary) !impor
 .rdbes-diagram .heading { text-anchor: middle; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--bs-secondary-color); }
 .rdbes-diagram .db rect { fill: #e4e2dc; stroke: #8c8a83; stroke-width: 1.5; }
 .rdbes-diagram .db text { text-anchor: middle; font-size: 12px; font-weight: 600; letter-spacing: 0.3em; fill: #5f5d57; }
-.rdbes-diagram .node rect { fill: var(--bs-body-bg); stroke: #8c8a83; stroke-width: 1.5; }
-.rdbes-diagram .node.s-none rect { stroke-dasharray: 4 3; fill: none; }
+.rdbes-diagram .node .box { fill: var(--bs-body-bg); stroke: #8c8a83; stroke-width: 1.5; }
+.rdbes-diagram .node.s-none .box { stroke-dasharray: 4 3; fill: none; }
 .rdbes-diagram .node-name { font-size: 13px; font-weight: 600; fill: var(--bs-body-color); }
 .rdbes-diagram .node-status { font-size: 11px; fill: var(--bs-secondary-color); }
-.rdbes-diagram a:focus-visible rect { stroke: var(--bs-primary); stroke-width: 3; }
+.rdbes-diagram a:focus-visible .box { stroke: var(--bs-primary); stroke-width: 3; }
 .rdbes-diagram .lamp, .rdbes-legend .lamp { stroke: #5f5d57; stroke-width: 1; }
 .s-none.lamp, .s-none .lamp { fill: #d5d4ce; }
 .s-l0.lamp, .s-l0 .lamp { fill: #fbe3b0; }
@@ -68,3 +68,8 @@ div.dt-buttons > button.dt-button:hover { background: var(--bs-secondary) !impor
 .link-mark.s-partial { color: #c98a10; }
 .link-mark.s-not-connected { color: #8c8a83; }
 .link-mark.s-broken { color: #d64545; }
+.rdbes-diagram .port { stroke: #5f5d57; stroke-width: 1.5; }
+.rdbes-diagram .port-on, .rdbes-legend .port-on { fill: #2e9e5b; stroke: #5f5d57; stroke-width: 1.5; }
+.rdbes-diagram .port-off, .rdbes-legend .port-off { fill: var(--bs-body-bg); stroke: #5f5d57; stroke-width: 1.5; }
+#rdbes-modal-body .rdbes-diagram { overflow: auto; margin: 0; }
+#rdbes-modal-body .rdbes-diagram svg { min-width: 760px; max-height: calc(100vh - 11rem); }

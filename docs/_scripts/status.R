@@ -351,37 +351,127 @@ advice_sheets <- function(advice_repos) {
   sheets
 }
 
-# the national estimation and stock coordination repositories of the RDBES
-# workflow, with their TAF readiness level. Their code is in folders, by
-# expert group or by stock, so all the R scripts in them are looked at, not
-# only those at the top level with model or method in their name.
+# a file in a repository, as text, or NULL if it cannot be read
+gh_file <- function(repo, path, owner = "ices-taf") {
+  text <- suppressWarnings(system2(
+    "gh",
+    c("api", "-H", shQuote("Accept: application/vnd.github.raw"), shQuote(sprintf("repos/%s/%s/contents/%s", owner, repo, utils::URLencode(path)))),
+    stdout = TRUE, stderr = FALSE
+  ))
+  if (!is.null(attr(text, "status"))) NULL else text
+}
+
+# whether the code of a repository calls a function of icesRDBES, outside
+# comments
+calls <- function(text, fun) {
+  any(grepl(paste0("\\b", fun, "\\s*\\("), sub("#.*$", "", text)))
+}
+
+# the connections of a repository to the RDBES, found in its code. The paths
+# are those of its files: a repository can hold several TAF projects in
+# folders, as by expert group, each with its own boot/DATA.bib, output.R and
+# report.R.
+#
+# - download: the scripts of the data in boot/DATA.bib with source = {script}
+#   that call icesRDBES::rdbes_download_data()
+# - upload: output.R and report.R, or the scripts they source, that call
+#   icesRDBES::rdbes_upload_data()
+# - sandbox: any of these that call icesRDBES::use_sboxrdbes(), so that they
+#   download from or upload to the RDBES sandbox
+rdbes_ports <- function(repo, paths) {
+  found <- list(download = character(), upload = character(), sandbox = FALSE)
+  read <- function(path) {
+    text <- gh_file(repo, path)
+    if (calls(text, "use_sboxrdbes")) found$sandbox <<- TRUE
+    text
+  }
+
+  for (bib in paths[grepl("(^|/)boot/DATA[.]bib$", paths)]) {
+    base <- sub("boot/DATA[.]bib$", "", bib)
+    entries <- strsplit(paste(read(bib), collapse = "\n"), "@")[[1]]
+    for (entry in entries) {
+      key <- regmatches(entry, regexec("^\\w+\\s*\\{\\s*([^,\\s]+)\\s*,", entry))[[1]][2]
+      source <- regmatches(entry, regexec("source\\s*=\\s*\\{\\s*([^}]*?)\\s*\\}", entry))[[1]][2]
+      script <- paste0(base, "boot/", key, ".R")
+      if (!is.na(key) && source %in% "script" && script %in% paths && calls(read(script), "rdbes_download_data")) {
+        found$download <- c(found$download, script)
+      }
+    }
+  }
+
+  # output.R and report.R, and the scripts they source, a few levels down
+  todo <- paths[grepl("(^|/)(output|report)[.]R$", paths)]
+  bases <- setNames(sub("[^/]*$", "", todo), todo)
+  seen <- character()
+  while (length(todo) && length(seen) < 50) {
+    path <- todo[1]
+    todo <- todo[-1]
+    if (path %in% seen) next
+    seen <- c(seen, path)
+    text <- read(path)
+    if (calls(text, "rdbes_upload_data")) found$upload <- c(found$upload, path)
+    # sourced from the folder of the TAF project, which is where it runs
+    sourced <- regmatches(text, regexpr("source\\(\\s*[\"'][^\"']+[\"']", text))
+    sourced <- sub("^source\\(\\s*[\"']", "", sub("[\"']$", "", sourced))
+    sourced <- sub("^[.]/", "", paste0(bases[[path]], sourced))
+    sourced <- sourced[sourced %in% paths & !sourced %in% seen]
+    bases[sourced] <- bases[[path]]
+    todo <- c(todo, sourced)
+  }
+  found
+}
+
+# the repositories of the RDBES workflow: the national estimation, stock
+# coordination and stock assessment repositories, with what is found of
+# their connections to the RDBES in their code, and the TAF readiness level
+# of the first two. The code of the national estimation and stock
+# coordination repositories is in folders, by expert group or by stock, so
+# all the R scripts in them are looked at for the level, not only those at
+# the top level with model or method in their name.
 rdbes_repos <- function(repos) {
   rdbes <- jsonlite::fromJSON(rdbes_file)
-  out <- data.frame(name = c(
-    sprintf("%d_all_RDBES_%s", rdbes$year, rdbes$countries),
-    sprintf("%d_%s_RDBES_combined", rdbes$year, rdbes$stocks)
-  ))
+  # the assessment of a stock: <year>_<stock>_assessment, or failing that
+  # <year>_<stock>, as on the readiness page
+  assessment <- vapply(rdbes$stocks, function(stock) {
+    candidates <- sprintf("%d_%s%s", rdbes$year, stock, c("_assessment", ""))
+    c(candidates[candidates %in% repos$name], candidates[1])[1]
+  }, "")
+  out <- data.frame(
+    name = c(
+      sprintf("%d_all_RDBES_%s", rdbes$year, rdbes$countries),
+      sprintf("%d_%s_RDBES_combined", rdbes$year, rdbes$stocks),
+      assessment
+    ),
+    stage = rep(c("national", "coordination", "assessment"), c(length(rdbes$countries), length(rdbes$stocks), length(rdbes$stocks)))
+  )
   i <- match(out$name, repos$name)
   out$exists <- !is.na(i)
   out$visibility <- repos$visibility[i]
   out$pushed <- repos$pushed[i]
-  out$code_size <- vapply(seq_len(nrow(out)), function(j) {
-    if (!out$exists[j]) {
-      return(NA_real_)
-    }
+  out$code_size <- NA_real_
+  out$download <- out$upload <- ""
+  out$sandbox <- FALSE
+  for (j in which(out$exists)) {
     # an empty repository has no tree
     tree <- gh_api(sprintf("repos/ices-taf/%s/git/trees/HEAD?recursive=1", out$name[j]))$tree
-    size <- vapply(tree, function(f) {
-      script <- f$type == "blob" && grepl("[.](r|rmd)$", tolower(f$path))
-      if (script && f$size > min_script_size) as.numeric(f$size) else 0
-    }, 1)
-    sum(size)
-  }, 1)
+    blobs <- Filter(function(f) f$type == "blob", tree)
+    paths <- vapply(blobs, function(f) f$path, "")
+    size <- vapply(blobs, function(f) as.numeric(f$size), 1)
+    out$code_size[j] <- sum(size[grepl("[.](r|rmd)$", tolower(paths)) & size > min_script_size])
+    ports <- rdbes_ports(out$name[j], paths)
+    out$download[j] <- paste(ports$download, collapse = " ")
+    out$upload[j] <- paste(ports$upload, collapse = " ")
+    out$sandbox[j] <- ports$sandbox
+  }
   out$has_code <- !is.na(out$code_size) & out$code_size > 0
   out$trl <- ifelse(out$has_code, 1, NA)
   out <- cbind(out, qc_results(out$name))
   out$trl[out$has_code & out$qc_passed %in% TRUE] <- 2
-  message(sum(out$exists), " of ", nrow(out), " RDBES repositories, ", sum(out$has_code), " with code")
+  message(
+    sum(out$exists), " of ", nrow(out), " RDBES workflow repositories, ",
+    sum(nzchar(out$download)), " downloading from the RDBES, ",
+    sum(nzchar(out$upload)), " uploading to it"
+  )
   out
 }
 

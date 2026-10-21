@@ -29,24 +29,25 @@ node_statuses <- data.frame(
   )
 )
 
-# what can be said of a connection between two parts
+# what can be said of a connection between two parts. It is found in the
+# code: connected when the first uploads to the RDBES and the second downloads
+# from it, see _scripts/status.R. Broken can only be recorded by hand.
 link_statuses <- data.frame(
   key = c("connected", "partial", "not-connected", "broken"),
   label = c("Connected", "Partly connected", "Not connected", "Broken"),
   # as written in _data/rdbes.json
   value = c("connected", "partly connected", "not connected", "broken"),
-  symbol = c("●", "◐", "○", "✕"),
+  symbol = c("\u25CF", "\u25D0", "\u25CB", "\u2715"),
   title = c(
-    "Data pass between the two automatically, through the RDBES API",
-    "Data pass between the two by hand, or only some of them do",
-    "The two are not connected yet",
-    "The two used to be connected but are not now"
+    "The code of the first uploads to the RDBES, and the code of the second downloads from it",
+    "Only one of the two has the code to upload or to download",
+    "Neither has the code to upload or to download",
+    "Recorded by hand: the two used to be connected but are not now"
   )
 )
 
 link_key <- function(value) {
-  key <- link_statuses$key[match(tolower(value), link_statuses$value)]
-  ifelse(is.na(key), "not-connected", key)
+  link_statuses$key[match(tolower(value), link_statuses$value)]
 }
 
 # a status set by hand in _data/rdbes.json, which is taken over what is found
@@ -56,37 +57,33 @@ override <- function(name, field) {
   if (is.null(x)) NA_character_ else x
 }
 
-repo_node <- function(name, exists, trl) {
+# a repository, with its status and what was found of its connections to
+# the RDBES: the files that download from it and upload to it
+repo_node <- function(name, trl) {
+  i <- match(name, rdbes_repos$name)
+  exists <- rdbes_repos$exists[i] %in% TRUE
   key <- if (!exists) "none" else if (is.na(trl)) "l0" else paste0("l", trl)
   set <- override(name, "status")
   if (!is.na(set)) key <- set
+  files <- function(x) if (is.na(x)) "" else x
   data.frame(
     name = name, key = key,
     url = fmt("https://github.com/ices-taf/%s", name),
-    note = override(name, "note")
+    note = override(name, "note"),
+    download = files(rdbes_repos$download[i]),
+    upload = files(rdbes_repos$upload[i]),
+    sandbox = rdbes_repos$sandbox[i] %in% TRUE
   )
 }
 
-from_status <- function(names) {
-  i <- match(names, rdbes_repos$name)
-  do.call(rbind, Map(
-    repo_node, names,
-    rdbes_repos$exists[i] %in% TRUE, rdbes_repos$trl[i]
-  ))
-}
+stage <- function(x) rdbes_repos[rdbes_repos$stage == x, ]
 
-national <- cbind(country = countries, from_status(fmt("%d_all_RDBES_%s", year, countries)))
-coordination <- cbind(stock = stocks, from_status(fmt("%d_%s_RDBES_combined", year, stocks)))
-
-# the assessment of each stock: the repository named <year>_<stock>_assessment,
-# or failing that <year>_<stock>, as on the readiness page
-assessment <- do.call(rbind, lapply(stocks, function(stock) {
-  candidates <- fmt("%d_%s%s", year, stock, c("_assessment", ""))
-  i <- match(candidates, taf_repos$name)
-  i <- i[!is.na(i)][1]
-  name <- if (is.na(i)) candidates[1] else taf_repos$name[i]
-  cbind(stock = stock, repo_node(name, !is.na(i), taf_repos$trl[i]))
-}))
+national <- cbind(country = countries, do.call(rbind, Map(repo_node, stage("national")$name, stage("national")$trl)))
+coordination <- cbind(stock = stocks, do.call(rbind, Map(repo_node, stage("coordination")$name, stage("coordination")$trl)))
+# the level of an assessment is that on the readiness page
+assessment <- cbind(stock = stocks, do.call(rbind, lapply(stage("assessment")$name, function(name) {
+  repo_node(name, taf_repos$trl[match(name, taf_repos$name)])
+})))
 
 # the advice sheet of each stock, and what was found of the link in it to the
 # published code, see status/advice-sheets.qmd
@@ -111,20 +108,55 @@ advice <- do.call(rbind, lapply(stocks, function(stock) {
   )
 }))
 
+# a connection through the RDBES, from what was found in the code of the
+# repository that uploads and of the one that downloads, unless a status is
+# recorded by hand
+connection <- function(from, to, status = NA) {
+  up <- nzchar(from$upload)
+  down <- nzchar(to$download)
+  key <- if (!is.na(status) && !is.na(link_key(status))) {
+    link_key(status)
+  } else if (up && down) {
+    "connected"
+  } else if (up || down) {
+    "partial"
+  } else {
+    "not-connected"
+  }
+  said <- function(node, what, files) {
+    fmt("%s %s: %s", node$name, what, if (nzchar(files)) paste("yes, in", files) else "not found in the code")
+  }
+  sandbox <- if (from$sandbox || to$sandbox) "The RDBES sandbox is used." else NULL
+  list(key = key, found = paste(c(said(from, "uploads", from$upload), said(to, "downloads", to$download), sandbox), collapse = ". "))
+}
+
 # the connections from the countries to the stocks: only those recorded
-links <- if (length(rdbes$links)) as.data.frame(rdbes$links) else data.frame(country = character(), stock = character(), status = character())
+links <- if (length(rdbes$links)) as.data.frame(rdbes$links) else data.frame(country = character(), stock = character())
+if (is.null(links$status)) links$status <- NA
 if (is.null(links$note)) links$note <- NA
 links <- links[links$country %in% countries & links$stock %in% stocks, ]
-links$key <- link_key(links$status)
+found <- lapply(seq_len(nrow(links)), function(i) {
+  connection(
+    national[match(links$country[i], national$country), ],
+    coordination[match(links$stock[i], coordination$stock), ],
+    links$status[i]
+  )
+})
+links$key <- vapply(found, `[[`, "", "key")
+links$found <- vapply(found, `[[`, "", "found")
 
 # the connections from the stock coordination to the assessments
-stock_links <- data.frame(stock = stocks, key = "not-connected", note = NA)
-if (length(rdbes$stock_links)) {
-  set <- as.data.frame(rdbes$stock_links)
-  i <- match(stock_links$stock, set$stock)
-  stock_links$key[!is.na(i)] <- link_key(set$status[i[!is.na(i)]])
-  if (!is.null(set$note)) stock_links$note[!is.na(i)] <- set$note[i[!is.na(i)]]
-}
+set <- if (length(rdbes$stock_links)) as.data.frame(rdbes$stock_links) else data.frame(stock = character())
+found <- lapply(seq_along(stocks), function(i) {
+  j <- match(stocks[i], set$stock)
+  connection(coordination[i, ], assessment[i, ], if (is.na(j) || is.null(set$status)) NA else set$status[j])
+})
+stock_links <- data.frame(
+  stock = stocks,
+  key = vapply(found, `[[`, "", "key"),
+  found = vapply(found, `[[`, "", "found"),
+  note = if (is.null(set$note)) NA else set$note[match(stocks, set$stock)]
+)
 
 # a stock is connected end to end when every part of it runs and every
 # connection is made
@@ -197,21 +229,47 @@ node_svg <- function(column, y, label, node, data) {
     } else {
       node_statuses$title[match(node$key, node_statuses$key)]
     },
+    if (column != "advice" && node$key != "none") {
+      paste0(
+        ". Downloads from the RDBES: ", if (nzchar(node$download)) paste("yes, in", node$download) else "not found in the code",
+        if (column != "assessment") {
+          paste0(". Uploads to the RDBES: ", if (nzchar(node$upload)) paste("yes, in", node$upload) else "not found in the code")
+        },
+        if (node$sandbox) ". Uses the RDBES sandbox"
+      )
+    },
     if (!is.na(node$note)) paste0(". ", node$note) else ""
   )
+  # the ports: in on the left, downloading from the RDBES, and out on the
+  # right, uploading to it. An assessment uploads nothing.
+  port <- function(px, on, what) {
+    fmt(
+      "<rect class=\"port %s\" x=\"%g\" y=\"%g\" width=\"10\" height=\"10\" rx=\"2\"><title>%s</title></rect>",
+      if (on) "port-on" else "port-off", px - 5, y - 5, what
+    )
+  }
+  ports <- if (column == "advice" || node$key == "none") {
+    ""
+  } else {
+    paste0(
+      port(x, nzchar(node$download), if (nzchar(node$download)) "Downloads from the RDBES" else "No download from the RDBES found"),
+      if (column != "assessment") port(x + w, nzchar(node$upload), if (nzchar(node$upload)) "Uploads to the RDBES" else "No upload to the RDBES found")
+    )
+  }
   body <- fmt(
     paste0(
       "<g class=\"node s-%s\" %s><title>%s</title>",
-      "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" rx=\"6\"/>",
+      "<rect class=\"box\" x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" rx=\"6\"/>",
       "<circle class=\"lamp\" cx=\"%g\" cy=\"%g\" r=\"7\"/>",
       "<text class=\"node-name\" x=\"%g\" y=\"%g\">%s</text>",
-      "<text class=\"node-status\" x=\"%g\" y=\"%g\">%s</text></g>"
+      "<text class=\"node-status\" x=\"%g\" y=\"%g\">%s</text>%s</g>"
     ),
     node$key, data, esc(title),
     x, y - node_h / 2, w, node_h,
-    x + 16, y,
-    x + 32, y - 4, esc(label),
-    x + 32, y + 12, esc(status)
+    x + 19, y,
+    x + 34, y - 4, esc(label),
+    x + 34, y + 12, esc(status),
+    ports
   )
   if (is.na(node$url)) body else fmt("<a href=\"%s\">%s</a>", esc(node$url), body)
 }
@@ -228,10 +286,10 @@ pipe_svg <- function(d, key, title, data, mid) {
   )
 }
 
-link_title <- function(from, to, key, note) {
+link_title <- function(from, to, key, found, note) {
   paste0(
     from, " to ", to, ": ",
-    link_statuses$label[match(key, link_statuses$key)],
+    link_statuses$label[match(key, link_statuses$key)], ". ", found,
     ifelse(is.na(note), "", paste0(". ", note))
   )
 }
@@ -251,7 +309,7 @@ rdbes_diagram <- function() {
       pipe_svg(
         fmt("M%g,%g C%g,%g %g,%g %g,%g", x1, y1, xm, y1, xm, y2, x2, y2),
         links$key[i],
-        link_title(links$country[i], links$stock[i], links$key[i], links$note[i]),
+        link_title(links$country[i], links$stock[i], links$key[i], links$found[i], links$note[i]),
         fmt("data-country=\"%s\" data-stock=\"%s\"", esc(links$country[i]), esc(links$stock[i])),
         c(xm, (y1 + y2) / 2)
       )
@@ -265,7 +323,7 @@ rdbes_diagram <- function() {
       pipe_svg(
         fmt("M%g,%g L%g,%g", x1, y, x2, y),
         stock_links$key[i],
-        link_title(paste(stock, "coordination"), "assessment", stock_links$key[i], stock_links$note[i]),
+        link_title(paste(stock, "coordination"), "assessment", stock_links$key[i], stock_links$found[i], stock_links$note[i]),
         fmt("data-stock=\"%s\"", esc(stock)),
         c((x1 + x2) / 2, y)
       )
@@ -328,10 +386,11 @@ rdbes_diagram <- function() {
   )
 
   htmltools::HTML(paste0(
-    "<div class=\"rdbes-diagram\">",
+    "<div class=\"rdbes-diagram\" id=\"rdbes-diagram\">",
     fmt(
-      "<svg viewBox=\"0 0 %d %d\" role=\"img\" aria-labelledby=\"rdbes-title\">",
-      width, height
+      "<svg viewBox=\"-8 0 %d %d\" role=\"img\" aria-labelledby=\"rdbes-title\">",
+      # room for the ports at the edges
+      width + 16, height
     ),
     fmt(
       "<title id=\"rdbes-title\">The RDBES workflow in %d: the national estimation repositories of %d countries, connected through the RDBES database to the stock coordination and stock assessment repositories of %d stocks, and to their advice</title>",
@@ -362,6 +421,9 @@ rdbes_legend <- function() {
   htmltools::HTML(paste0(
     "<div class=\"rdbes-legend\"><div><strong>Repositories</strong>",
     paste(unlist(Map(lamp, node_statuses$key, node_statuses$label, node_statuses$title)), collapse = ""),
+    "</div><div><strong>Ports</strong>",
+    "<span class=\"item\"><svg width=\"14\" height=\"14\"><rect class=\"port port-on\" x=\"2\" y=\"2\" width=\"10\" height=\"10\" rx=\"2\"/></svg>Downloads or uploads</span>",
+    "<span class=\"item\"><svg width=\"14\" height=\"14\"><rect class=\"port port-off\" x=\"2\" y=\"2\" width=\"10\" height=\"10\" rx=\"2\"/></svg>Not found in the code</span>",
     "</div><div><strong>Connections</strong>",
     paste(unlist(Map(pipe, link_statuses$key, link_statuses$label, link_statuses$title)), collapse = ""),
     "</div></div>"
@@ -386,7 +448,7 @@ rdbes_matrix <- function() {
       if (!length(i)) {
         return("<td></td>")
       }
-      fmt("<td>%s</td>", link_cell(links$key[i[1]], link_title(country, stock, links$key[i[1]], links$note[i[1]])))
+      fmt("<td>%s</td>", link_cell(links$key[i[1]], link_title(country, stock, links$key[i[1]], links$found[i[1]], links$note[i[1]])))
     }, "")
     fmt("<tr><th scope=\"row\">%s</th>%s</tr>", esc(country), paste(cells, collapse = ""))
   }, "")
@@ -425,6 +487,33 @@ rdbes_stocks <- function() {
     "<div class=\"table-responsive\"><table class=\"table table-sm\"><thead><tr>",
     "<th scope=\"col\">Stock</th><th scope=\"col\">Coordination</th><th scope=\"col\">Countries connected</th>",
     "<th scope=\"col\">Assessment</th><th scope=\"col\">Advice link</th><th scope=\"col\">End to end</th><th scope=\"col\">Notes</th>",
+    "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table></div>"
+  ))
+}
+
+# what was found in the code of each repository: the files that download from
+# the RDBES and that upload to it
+rdbes_found <- function() {
+  nodes <- rbind(
+    cbind(part = "National estimation", national[c("name", "key", "url", "download", "upload", "sandbox")]),
+    cbind(part = "Stock coordination", coordination[c("name", "key", "url", "download", "upload", "sandbox")]),
+    cbind(part = "Stock assessment", assessment[c("name", "key", "url", "download", "upload", "sandbox")])
+  )
+  files <- function(x, none = "Not found") {
+    ifelse(nzchar(x), vapply(strsplit(x, " "), function(f) paste0("<code>", esc(f), "</code>", collapse = "<br>"), ""), none)
+  }
+  rows <- fmt(
+    "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>",
+    nodes$part,
+    ifelse(nodes$key == "none", paste(esc(nodes$name), "(no repository)"), fmt("<a href=\"%s\">%s</a>", esc(nodes$url), esc(nodes$name))),
+    ifelse(nodes$key == "none", "", files(nodes$download)),
+    ifelse(nodes$key == "none" | nodes$part == "Stock assessment", "", files(nodes$upload)),
+    ifelse(nodes$sandbox, "Yes", "")
+  )
+  htmltools::HTML(paste0(
+    "<div class=\"table-responsive\"><table class=\"table table-sm\"><thead><tr>",
+    "<th scope=\"col\">Part</th><th scope=\"col\">Repository</th><th scope=\"col\">Downloads from the RDBES</th>",
+    "<th scope=\"col\">Uploads to the RDBES</th><th scope=\"col\">Sandbox</th>",
     "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody></table></div>"
   ))
 }
