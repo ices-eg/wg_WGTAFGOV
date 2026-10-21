@@ -13,8 +13,8 @@ website:
     left:
       - text: System design
         href: system/index.qmd
-      - text: Strategy
-        href: strategy/index.qmd
+      - text: Planning
+        href: planning/index.qmd
       - text: Status
         href: status/index.qmd
       - text: Progress
@@ -39,10 +39,10 @@ website:
         - system/tafxplorer.qmd
         - system/readiness-level.qmd
         - system/components.qmd
-    - title: Strategy
+    - title: Planning
       contents:
-        - strategy/index.qmd
-        - strategy/roadmap.qmd
+        - planning/index.qmd
+        - planning/workstreams.qmd
     - title: Status
       contents:
         - status/index.qmd

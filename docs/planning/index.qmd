@@ -1,5 +1,7 @@
 ---
-title: "Strategy"
+title: "Planning"
+aliases:
+  - ../strategy/index.html
 ---
 
 ## Goals for 2026/2027
@@ -12,7 +14,7 @@ The main goal for TAF in 2026/2027 is an end-to-end process in which:
 - the results are publicly accessible
 - the tafXplorer gives a consistent, easy to navigate way to explore stock assessments
 
-The full description and diagram are in the [architecture introduction](../system/index.qmd). Progress towards these goals is tracked by workstream on the [roadmap](roadmap.qmd).
+The full description and diagram are in the [architecture introduction](../system/index.qmd). Progress towards these goals is tracked by workstream on the [workstreams](workstreams.qmd) page.
 
 ## Team composition
 

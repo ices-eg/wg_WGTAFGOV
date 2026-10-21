@@ -1,5 +1,7 @@
 ---
-title: "Roadmap"
+title: "Workstreams"
+aliases:
+  - ../strategy/roadmap.html
 ---
 
 Each workstream corresponds to a `Sprint:` label in the issue tracker. The progress bars and issue lists below are updated automatically from GitHub; the descriptions are maintained by hand in this file.

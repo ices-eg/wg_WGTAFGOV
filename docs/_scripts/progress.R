@@ -1,5 +1,5 @@
 # Build the progress fragments included by index.qmd, progress.qmd and
-# strategy/roadmap.qmd.
+# planning/workstreams.qmd.
 #
 # Run from the docs/ folder before `quarto render`; Quarto resolves includes
 # before any pre-render step, so this cannot be a pre-render script.
@@ -189,7 +189,7 @@ write_html("priority", issue_list(
 write_html("closed", issue_list(newest(issues[!is_open, ], "closed", n_recent), "closed"))
 write_html("opened", issue_list(newest(issues[is_open, ], "created", n_recent), "created"))
 
-# ---- roadmap fragments, one per workstream ---------------------------------
+# ---- workstream fragments, one per workstream ---------------------------------
 
 for (sprint in sprints) {
   label <- paste("Sprint:", sprint)

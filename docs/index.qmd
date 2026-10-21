@@ -16,9 +16,9 @@ The architecture of TAF: the core vision, business architecture, process workflo
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
-### [Strategy](strategy/index.qmd)
+### [Planning](planning/index.qmd)
 
-Goals for 2026/2027, the team, and the roadmap of workstreams.
+Goals for 2026/2027, the team, and progress by workstream.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-3}
