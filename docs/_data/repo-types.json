@@ -1,0 +1,162 @@
+{
+  "columns": [
+    {
+      "id": "national",
+      "label": "National estimation"
+    },
+    {
+      "id": "inputs",
+      "label": "Inputs"
+    },
+    {
+      "id": "assessment",
+      "label": "Stock assessment"
+    },
+    {
+      "id": "outputs",
+      "label": "Outputs"
+    },
+    {
+      "id": "mixfish",
+      "label": "Mixed fisheries"
+    }
+  ],
+  "types": [
+    {
+      "id": "national",
+      "label": "National estimation",
+      "column": "national",
+      "pattern": "^{year}_all_RDBES_(?<short>[A-Za-z-]+)$",
+      "stocks": "rdbes"
+    },
+    {
+      "id": "coordination",
+      "label": "Stock coordination",
+      "column": "inputs",
+      "pattern": "^{year}_{stock}_(?<short>RDBES_combined)$"
+    },
+    {
+      "id": "survey",
+      "label": "Survey index",
+      "column": "inputs",
+      "pattern": "^{year}_{stock}_(?<short>survey|acousticIndex.*|stox)$"
+    },
+    {
+      "id": "data",
+      "label": "Data",
+      "column": "inputs",
+      "pattern": "^{year}_{stock}_(?<short>data)$"
+    },
+    {
+      "id": "assessment",
+      "label": "Stock assessment",
+      "column": "assessment",
+      "pattern": "^{year}_{stock}(?<short>(_(west|south))?(_assessment([-_].*)?)?)$",
+      "required": true
+    },
+    {
+      "id": "forecast",
+      "label": "Forecast",
+      "column": "outputs",
+      "pattern": "^{year}_{stock}_(?<short>(.+_)?forecast)$"
+    },
+    {
+      "id": "refpts",
+      "label": "Reference points",
+      "column": "outputs",
+      "pattern": "^{year}_{stock}_(?<short>refpts)$"
+    },
+    {
+      "id": "mixfish",
+      "label": "Mixed fisheries",
+      "column": "mixfish",
+      "pattern": "^{year}_(?<short>.*(MixedFisheriesAdvice|wgmixfish).*)$",
+      "stocks": "members"
+    },
+    {
+      "id": "benchmark",
+      "label": "Benchmark",
+      "lane": "reference",
+      "pattern": "^{year}_{stock}_(?<short>(.+_)?benchmark([-_].*)?)$",
+      "years": "latest"
+    },
+    {
+      "id": "wkmfoa",
+      "label": "WKMFOA reference points",
+      "lane": "reference",
+      "pattern": "^{year}_{stock}_(?<short>wkmfoa)$",
+      "years": "latest"
+    },
+    {
+      "id": "newref",
+      "label": "New reference points",
+      "lane": "reference",
+      "pattern": "^{year}_{stock}_(?<short>newref)$",
+      "years": "latest"
+    },
+    {
+      "id": "rebuild",
+      "label": "Rebuilding plan",
+      "lane": "reference",
+      "pattern": "^{year}_{stock}_(?<short>rebuild|HCR_rebuild)$",
+      "years": "latest"
+    }
+  ],
+  "flows": [
+    {
+      "from": "national",
+      "to": "coordination",
+      "via": "RDBES"
+    },
+    {
+      "from": "coordination",
+      "to": "assessment",
+      "via": "RDBES"
+    },
+    {
+      "from": "survey",
+      "to": "assessment"
+    },
+    {
+      "from": "data",
+      "to": "assessment"
+    },
+    {
+      "from": "assessment",
+      "to": "forecast"
+    },
+    {
+      "from": "assessment",
+      "to": "refpts"
+    },
+    {
+      "from": "assessment",
+      "to": "mixfish"
+    },
+    {
+      "from": "forecast",
+      "to": "mixfish"
+    },
+    {
+      "from": "benchmark",
+      "to": "assessment",
+      "indirect": true
+    },
+    {
+      "from": "wkmfoa",
+      "to": "assessment",
+      "indirect": true
+    },
+    {
+      "from": "newref",
+      "to": "assessment",
+      "indirect": true
+    },
+    {
+      "from": "rebuild",
+      "to": "assessment",
+      "indirect": true
+    }
+  ],
+  "members": {}
+}

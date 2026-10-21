@@ -84,6 +84,10 @@ qc_url <- "https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/ma
 # the file is there but not valid, which does not.
 qc_no_software_bib <- c("qc.software.bib.exists", "qc.software.bib.valid")
 
+# the repositories that each repository takes data from, kept from one run to
+# the next like the model scripts. Read by status/stock-repos.qmd
+sources_file <- "_data/data-sources.csv"
+
 # the countries and stocks of the RDBES workflow, see status/rdbes.qmd
 rdbes_file <- "_data/rdbes.json"
 # a new TAF repository starts with R scripts of about 100 bytes: one larger
@@ -475,6 +479,84 @@ rdbes_repos <- function(repos) {
   out
 }
 
+# the text of a file in each of several repositories, NA where there is no
+# such file
+file_texts <- function(names, paths, owner = "ices-taf") {
+  out <- rep(NA_character_, length(names))
+  # a few files per request: GitHub times out on large queries
+  for (batch in split(seq_along(names), ceiling(seq_along(names) / 20))) {
+    query <- paste0(
+      "{",
+      paste0(
+        sprintf(
+          "r%d: repository(owner: \"%s\", name: \"%s\") { object(expression: \"HEAD:%s\") { ... on Blob { text } } }",
+          batch, owner, names[batch], gsub("\"", "\\\\\"", paths[batch])
+        ),
+        collapse = " "
+      ),
+      "}"
+    )
+    for (attempt in 1:3) {
+      json <- suppressWarnings(
+        system2("gh", c("api", "graphql", "-f", shQuote(paste0("query=", query))), stdout = TRUE, stderr = FALSE)
+      )
+      if (is.null(attr(json, "status"))) break
+    }
+    if (!is.null(attr(json, "status"))) stop("could not read the files of the repositories")
+    res <- jsonlite::fromJSON(paste(json, collapse = "\n"), simplifyVector = FALSE)$data
+    for (i in batch) {
+      text <- res[[paste0("r", i)]]$object$text
+      if (!is.null(text)) out[i] <- text
+    }
+  }
+  out
+}
+
+# the repositories that each repository takes data from: the other ices-taf
+# repositories named in its DATA.bib, in boot/ or in the older bootstrap/, or
+# in the scripts of the entries in it with source = {script}. Read from
+# GitHub only for the repositories that are new or have been pushed to since
+# they were last read.
+data_sources <- function(repos) {
+  known <- if (file.exists(sources_file)) {
+    read.csv(sources_file, stringsAsFactors = FALSE, na.strings = "")
+  } else {
+    data.frame(name = character(), pushed = character(), sources = character())
+  }
+  current <- merge(repos[c("name", "pushed")], known, all.x = TRUE, sort = FALSE)
+  stale <- !paste(current$name, current$pushed) %in% paste(known$name, known$pushed)
+  message(sum(stale), " of ", nrow(current), " repositories to read the data sources of")
+  if (any(stale)) {
+    names <- current$name[stale]
+    n <- length(names)
+    bibs <- file_texts(rep(names, 2), rep(c("boot/DATA.bib", "bootstrap/DATA.bib"), each = n))
+    folder <- ifelse(is.na(bibs[1:n]), "bootstrap/", "boot/")
+    bib <- ifelse(is.na(bibs[1:n]), bibs[n + 1:n], bibs[1:n])
+    # the scripts of the entries with source = {script}
+    scripts <- lapply(seq_len(n), function(i) {
+      if (is.na(bib[i])) {
+        return(character())
+      }
+      entries <- strsplit(bib[i], "@")[[1]]
+      script <- grepl("source\\s*=\\s*\\{\\s*script\\s*\\}", entries)
+      keys <- regmatches(entries[script], regexec("^\\w+\\s*\\{\\s*([^,\\s]+)\\s*,", entries[script]))
+      keys <- vapply(keys, function(x) if (length(x) == 2) x[2] else NA_character_, "")
+      paste0(folder[i], keys[!is.na(keys)], ".R")
+    })
+    texts <- file_texts(rep(names, lengths(scripts)), unlist(scripts))
+    text <- split(texts, factor(rep(seq_len(n), lengths(scripts)), seq_len(n)))
+    current$sources[stale] <- vapply(seq_len(n), function(i) {
+      words <- unlist(regmatches(c(bib[i], text[[i]]), gregexpr("[0-9]{4}_[A-Za-z0-9._-]+", c(bib[i], text[[i]]))))
+      words <- unique(c(words, sub("[.][A-Za-z]+$", "", words)))
+      found <- sort(setdiff(intersect(words, repos$name), names[i]))
+      if (length(found)) paste(found, collapse = " ") else NA_character_
+    }, "")
+    kept <- rbind(current, known[!known$name %in% current$name, names(current)])
+    write.csv(kept[order(kept$name), ], sources_file, row.names = FALSE, na = "")
+  }
+  message(sum(!is.na(current$sources)), " repositories take data from another")
+}
+
 category <- function(data_category) {
   x <- floor(suppressWarnings(as.numeric(data_category)))
   ifelse(x < 2, "Category 1", "Categories 2-6")
@@ -644,6 +726,9 @@ build <- function() {
   ))
 
   # ---- all repositories ----------------------------------------------------
+
+  # the repositories named for a year, and what they take data from
+  data_sources(repos[grepl("^[0-9]{4}_", repos$name), ])
 
   # read by the R code in status/index.qmd
   write.csv(
