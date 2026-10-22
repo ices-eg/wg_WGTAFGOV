@@ -1,0 +1,40 @@
+---
+title: "TAF templates"
+---
+
+A TAF template is a complete, well documented TAF analysis for an assessment method. It follows the TAF structure and gives all the standard plots, tables and diagnostics. It also creates the outputs that are needed, such as the uploads to SAG and the ASD and an FLStock object. The development of the templates is planned on the [project board](https://github.com/orgs/ices-eg/projects/10), under the [Sprint: templates](../progress.qmd) issues. The repositories are in [ices-tools-dev](https://github.com/ices-tools-dev) while they are developed, and some are moved to [ices-tools-prod](https://github.com/ices-tools-prod).
+
+The templates and their repositories are listed in `_data/templates.csv`.
+
+```{r}
+#| include: false
+templates <- read.csv("../_generated/templates.csv", stringsAsFactors = FALSE, na.strings = "")
+
+files <- strsplit(ifelse(is.na(templates$files), "", templates$files), ";")
+templates$scripts <- vapply(files, function(x) sum(grepl("\\.R$", x)), 1)
+templates$stage <- ifelse(
+  is.na(templates$repo), "Planned",
+  ifelse(templates$scripts > 0, "In development", "Repository created")
+)
+n <- table(factor(templates$stage, c("In development", "Repository created", "Planned")))
+```
+
+There are `r nrow(templates)` templates. `r n[["In development"]]` have R scripts in their repositories, `r n[["Repository created"]]` have a repository with only a README so far, and `r n[["Planned"]]` have no repository yet.
+
+```{r}
+#| echo: false
+link <- function(url, text) ifelse(is.na(url), "", sprintf("<a href=\"%s\">%s</a>", url, htmltools::htmlEscape(text)))
+issue_url <- ifelse(is.na(templates$issue), NA, paste0("https://github.com/ices-eg/wg_WGTAFGOV/issues/", templates$issue))
+knitr::kable(
+  data.frame(
+    Template = templates$template,
+    Repository = link(templates$url, templates$repo),
+    Issue = link(issue_url, paste0("#", templates$issue)),
+    Stage = templates$stage,
+    "R scripts" = ifelse(is.na(templates$repo), "", templates$scripts),
+    "Last updated" = ifelse(is.na(templates$pushed), "", substr(templates$pushed, 1, 10)),
+    check.names = FALSE
+  ),
+  format = "html", escape = FALSE
+)
+```

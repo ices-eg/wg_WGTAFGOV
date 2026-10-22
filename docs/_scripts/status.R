@@ -91,6 +91,11 @@ sources_file <- "_data/data-sources.csv"
 # the countries and stocks of the RDBES workflow, see status/rdbes.qmd
 rdbes_file <- "_data/rdbes.json"
 stock_countries_file <- "_data/rdbes-stock-countries.csv"
+
+# the TAF templates being developed, with their repositories in ices-tools-dev
+# or ices-tools-prod and their issues on the project board, see
+# status/templates.qmd
+templates_file <- "_data/templates.csv"
 # a new TAF repository starts with R scripts of about 100 bytes: one larger
 # than this has some code in it
 min_script_size <- 150
@@ -584,6 +589,27 @@ tally <- function(data, by, name) {
   out
 }
 
+# the templates of templates_file, with the files in the repository of each,
+# separated by semicolons. A template with no repository yet is planned.
+template_repos <- function() {
+  x <- read.csv(templates_file, stringsAsFactors = FALSE, na.strings = "")
+  info <- lapply(x$repo, function(repo) if (is.na(repo)) NULL else gh_api(paste0("repos/", repo)))
+  field <- function(name) {
+    vapply(info, function(r) if (is.null(r)) NA_character_ else r[[name]], "")
+  }
+  files <- function(repo, branch) {
+    if (is.na(branch)) return(NA_character_)
+    tree <- gh_api(sprintf("repos/%s/git/trees/%s?recursive=1", repo, branch))
+    if (is.null(tree)) return(NA_character_)
+    blobs <- Filter(function(f) f$type == "blob", tree$tree)
+    paste(vapply(blobs, function(f) f$path, ""), collapse = ";")
+  }
+  x$url <- field("html_url")
+  x$pushed <- field("pushed_at")
+  x$files <- unname(mapply(files, x$repo, field("default_branch")))
+  x
+}
+
 # ---- build -----------------------------------------------------------------
 
 build <- function() {
@@ -735,6 +761,9 @@ build <- function() {
       format(Sys.time(), "%e %B %Y, %H:%M UTC", tz = "UTC")
     )
   ))
+
+  # read by status/templates.qmd
+  write.csv(template_repos(), file.path(out_dir, "templates.csv"), row.names = FALSE, na = "")
 
   # ---- all repositories ----------------------------------------------------
 

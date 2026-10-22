@@ -48,6 +48,7 @@ website:
         - status/index.qmd
         - status/stock-assessments.qmd
         - status/readiness.qmd
+        - status/templates.qmd
         - status/advice-sheets.qmd
         - status/rdbes.qmd
         - status/stock-repos.qmd
