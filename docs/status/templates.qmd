@@ -71,19 +71,6 @@ There are `r sum(!is_method)` templates. `r n[["development"]]` have R scripts i
 
 ## Progress
 
-Each template is checked for the markers below. Hold the pointer over a marker to see where it was found, and click it to go there. The bar is the share of the markers that apply to the template that are done; a marker only partly done is not counted.
-
-- **Structure:** level 1 has the TAF scripts `data.R`, `model.R`, `output.R` and `report.R`, with some modelling. Level 2 also passes the QC workflow of the repository, a GitHub Actions workflow with `qc` in its name. This follows the [TAF readiness level](../system/readiness-level.qmd), though the QC dashboard only covers the repositories in ices-taf.
-- **Inputs:** checks of the input data, such as a data validator.
-- **Model:** the model is fitted, and there is a forecast.
-- **Outputs:** plots saved to files (partly done when plots are drawn but not saved), tables written with `write.taf()` or the like, and diagnostics such as retrospective analyses and residuals.
-- **Report:** a general write-up is made by the report scripts, in Word or from R Markdown or Quarto. A report on the quality assurance of the inputs and outputs is to follow.
-- **Deliverables:** the SAG and ASD XML files for upload, and an FLStock object.
-
-All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_data/template-markers.csv`.
-
-Some templates offer several methods, such as the chr, rb and rfb rules of the Category 3 template. Each method has its own row, indented under the template, with the markers found in its own scripts: those with `_<method>` in their name, such as `model_chr.R`. Its level 1 needs its own data, model, output and report scripts, and its level 2 is the QC workflow of the repository. The row of the template is for all its scripts together.
-
 ```{r}
 #| echo: false
 library(htmltools)
@@ -155,6 +142,19 @@ tagList(
   tags$p(class = "tpl-updated", paste("Updated", format(file.mtime("../_generated/templates.csv"), "%e %B %Y.")))
 )
 ```
+
+Each template is checked for the markers below. Hold the pointer over a marker to see where it was found, and click it to go there. The bar is the share of the markers that apply to the template that are done; a marker only partly done is not counted.
+
+- **Structure:** level 1 has the TAF scripts `data.R`, `model.R`, `output.R` and `report.R`, with some modelling. Level 2 also passes the QC workflow of the repository, a GitHub Actions workflow with `qc` in its name. This follows the [TAF readiness level](../system/readiness-level.qmd), though the QC dashboard only covers the repositories in ices-taf.
+- **Inputs:** checks of the input data, such as a data validator.
+- **Model:** the model is fitted, and there is a forecast.
+- **Outputs:** plots saved to files (partly done when plots are drawn but not saved), tables written with `write.taf()` or the like, and diagnostics such as retrospective analyses and residuals.
+- **Report:** a general write-up is made by the report scripts, in Word or from R Markdown or Quarto. A report on the quality assurance of the inputs and outputs is to follow.
+- **Deliverables:** the SAG and ASD XML files for upload, and an FLStock object.
+
+All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_data/template-markers.csv`.
+
+Some templates offer several methods, such as the chr, rb and rfb rules of the Category 3 template. Each method has its own row, indented under the template, with the markers found in its own scripts: those with `_<method>` in their name, such as `model_chr.R`. Its level 1 needs its own data, model, output and report scripts, and its level 2 is the QC workflow of the repository. The row of the template is for all its scripts together.
 
 ```{=html}
 <style>
