@@ -1,1 +1,18 @@
 template,method,marker,status,note
+Category 3,,forecast,na,The advice rules give the advice directly
+Category 3,,flstock,na,No age-structured model
+Category 3,chr,forecast,na,The advice rules give the advice directly
+Category 3,chr,flstock,na,No age-structured model
+Category 3,rb,forecast,na,The advice rules give the advice directly
+Category 3,rb,flstock,na,No age-structured model
+Category 3,rfb,forecast,na,The advice rules give the advice directly
+Category 3,rfb,flstock,na,No age-structured model
+SPiCT,,flstock,na,A surplus production model has no ages
+Fsquared,,forecast,na,Fsquared sets reference points
+Fsquared,,sag,na,Fsquared sets reference points
+Fsquared,,asd,na,Fsquared sets reference points
+Fsquared,,flstock,na,Fsquared takes an FLStock as input
+Category 5,,forecast,na,The advice rule gives the advice directly
+Category 5,,diagnostics,na,No model to diagnose
+Category 5,,asd,na,
+Category 5,,flstock,na,No age-structured model
