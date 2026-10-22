@@ -599,7 +599,8 @@ template_markers <- list(
   model = list(stage = "^model", code = function(code) {
     sum(nzchar(trimws(code)) & !grepl("^\\s*(library|require|mkdir|source)\\s*\\(", code)) >= 3
   }),
-  forecast = list(stage = "^model", name = "forecast|stf", code = "\\b(stf|forecast)\\s*\\("),
+  # manage() is the forecast of SPiCT, its management scenarios
+  forecast = list(stage = "^model", name = "forecast|stf", code = "\\b(stf|forecast|manage)\\s*\\("),
   plots = list(stage = "^(output|report)", code = "\\b(taf\\.png|png|jpeg|pdf|svg|ggsave)\\s*\\("),
   # plots drawn, whether or not they are saved to a file
   drawn = list(stage = "^(output|report)", code = "\\b(ggplot|plot\\w*|barplot|hist|matplot|image)\\s*\\("),
@@ -609,7 +610,8 @@ template_markers <- list(
   report = list(stage = "^report", code = "\\b(read_docx|render|quarto_render)\\s*\\("),
   sag = list(stage = "", code = "(?i)icesSAG|createSAGxml|sag[^\"']*\\.xml"),
   asd = list(stage = "", code = "(?i)icesASD|asd[^\"']*\\.xml"),
-  flstock = list(stage = "", code = "\\bFLStock\\b")
+  # an FLStock made as an output, not one the data are read into
+  flstock = list(stage = "^output", code = "\\bFLStock\\b|SAM2FLStock|readFLSss3")
 )
 
 # the TAF scripts at the top of a repository
