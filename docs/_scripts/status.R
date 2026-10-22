@@ -589,25 +589,91 @@ tally <- function(data, by, name) {
   out
 }
 
+# the markers of progress of a template, shown on status/templates.qmd. Each
+# is looked for in the R scripts whose names match stage: in the name, or in
+# the code outside comments. A pattern for the code can be a function of the
+# lines of code instead.
+template_markers <- list(
+  inputs = list(stage = "^(data|utilities)", name = "valid|check", code = "\\bstopifnot\\s*\\(|\\bvalidat\\w*\\s*\\("),
+  # more than loading packages, making folders and running other scripts
+  model = list(stage = "^model", code = function(code) {
+    sum(nzchar(trimws(code)) & !grepl("^\\s*(library|require|mkdir|source)\\s*\\(", code)) >= 3
+  }),
+  forecast = list(stage = "^model", name = "forecast|stf", code = "\\b(stf|forecast)\\s*\\("),
+  plots = list(stage = "^(output|report)", code = "\\b(taf\\.png|png|jpeg|pdf|svg|ggsave)\\s*\\("),
+  # plots drawn, whether or not they are saved to a file
+  drawn = list(stage = "^(output|report)", code = "\\b(ggplot|plot\\w*|barplot|hist|matplot|image)\\s*\\("),
+  tables = list(stage = "^(output|report)", code = "\\b(write\\.taf|write\\.csv|write\\.table)\\s*\\("),
+  diagnostics = list(stage = "^(model|output|report)", code = "(?i)retro|residual|mohn|leaveout|hindcast|jitter|runs?test|\\bmase\\b"),
+  # a write-up made by the report scripts: Word, or rendered R Markdown or Quarto
+  report = list(stage = "^report", code = "\\b(read_docx|render|quarto_render)\\s*\\("),
+  sag = list(stage = "", code = "(?i)icesSAG|createSAGxml|sag[^\"']*\\.xml"),
+  asd = list(stage = "", code = "(?i)icesASD|asd[^\"']*\\.xml"),
+  flstock = list(stage = "", code = "\\bFLStock\\b")
+)
+
+# the TAF scripts at the top of a repository
+taf_scripts <- c("data.R", "model.R", "output.R", "report.R")
+
+# the code of the R scripts of a repository, outside comments. All the
+# scripts are looked at, not only those the TAF scripts source(): a template
+# can offer scripts for several methods, for the user to choose from.
+template_code <- function(repo, paths) {
+  r_files <- paths[grepl("\\.R$", paths)]
+  owner <- sub("/.*", "", repo)
+  name <- sub(".*/", "", repo)
+  sapply(r_files, function(path) sub("#.*$", "", gh_file(name, path, owner)), simplify = FALSE)
+}
+
+# the first script a marker is found in, or "" if it is in none
+find_marker <- function(marker, code) {
+  for (path in names(code)) {
+    if (!grepl(marker$stage, basename(path))) next
+    if (!is.null(marker$name) && grepl(marker$name, basename(path), ignore.case = TRUE)) return(path)
+    found <- if (is.function(marker$code)) marker$code(code[[path]]) else any(grepl(marker$code, code[[path]], perl = TRUE))
+    if (found) return(path)
+  }
+  ""
+}
+
+# the latest run of the QC workflow of a repository, one with qc in its name
+qc_run <- function(repo) {
+  runs <- gh_api(sprintf("repos/%s/actions/runs?per_page=50", repo))$workflow_runs
+  runs <- Filter(function(r) grepl("qc", basename(r$path), ignore.case = TRUE), runs)
+  if (length(runs) == 0) return(list(conclusion = NA_character_, url = NA_character_))
+  list(conclusion = if (is.null(runs[[1]]$conclusion)) "in progress" else runs[[1]]$conclusion, url = runs[[1]]$html_url)
+}
+
 # the templates of templates_file, with the files in the repository of each,
-# separated by semicolons. A template with no repository yet is planned.
+# separated by semicolons, and where each marker of progress is found. A
+# template with no repository yet is planned.
 template_repos <- function() {
   x <- read.csv(templates_file, stringsAsFactors = FALSE, na.strings = "")
   info <- lapply(x$repo, function(repo) if (is.na(repo)) NULL else gh_api(paste0("repos/", repo)))
   field <- function(name) {
     vapply(info, function(r) if (is.null(r)) NA_character_ else r[[name]], "")
   }
-  files <- function(repo, branch) {
-    if (is.na(branch)) return(NA_character_)
-    tree <- gh_api(sprintf("repos/%s/git/trees/%s?recursive=1", repo, branch))
-    if (is.null(tree)) return(NA_character_)
-    blobs <- Filter(function(f) f$type == "blob", tree$tree)
-    paste(vapply(blobs, function(f) f$path, ""), collapse = ";")
-  }
   x$url <- field("html_url")
+  x$branch <- field("default_branch")
   x$pushed <- field("pushed_at")
-  x$files <- unname(mapply(files, x$repo, field("default_branch")))
-  x
+  found <- lapply(seq_len(nrow(x)), function(i) {
+    none <- c(files = NA_character_, level = NA_character_, qc = NA_character_, qc_url = NA_character_,
+      vapply(template_markers, function(m) NA_character_, ""))
+    if (is.na(x$branch[i])) return(none)
+    tree <- gh_api(sprintf("repos/%s/git/trees/%s?recursive=1", x$repo[i], x$branch[i]))
+    if (is.null(tree)) return(none)
+    paths <- vapply(Filter(function(f) f$type == "blob", tree$tree), function(f) f$path, "")
+    code <- template_code(x$repo[i], paths)
+    markers <- vapply(template_markers, find_marker, "", code = code)
+    qc <- qc_run(x$repo[i])
+    # level 1: the TAF scripts, with some modelling. Level 2: also passes its
+    # QC workflow
+    level <- if (all(taf_scripts %in% paths) && nzchar(markers[["model"]])) {
+      if (qc$conclusion %in% "success") "2" else "1"
+    } else ""
+    c(files = paste(paths, collapse = ";"), level = level, qc = qc$conclusion, qc_url = qc$url, markers)
+  })
+  cbind(x, as.data.frame(do.call(rbind, found), stringsAsFactors = FALSE))
 }
 
 # ---- build -----------------------------------------------------------------

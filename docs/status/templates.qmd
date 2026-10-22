@@ -4,37 +4,170 @@ title: "TAF templates"
 
 A TAF template is a complete, well documented TAF analysis for an assessment method. It follows the TAF structure and gives all the standard plots, tables and diagnostics. It also creates the outputs that are needed, such as the uploads to SAG and the ASD and an FLStock object. The development of the templates is planned on the [project board](https://github.com/orgs/ices-eg/projects/10), under the [Sprint: templates](../progress.qmd) issues. The repositories are in [ices-tools-dev](https://github.com/ices-tools-dev) while they are developed, and some are moved to [ices-tools-prod](https://github.com/ices-tools-prod).
 
-The templates and their repositories are listed in `_data/templates.csv`.
-
 ```{r}
 #| include: false
-templates <- read.csv("../_generated/templates.csv", stringsAsFactors = FALSE, na.strings = "")
+templates <- read.csv("../_generated/templates.csv", stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
 
+# the markers of progress, in the groups they are shown in. Those after
+# level are found in the code by _scripts/status.R.
+markers <- data.frame(
+  id = c("level1", "level2", "inputs", "model", "forecast", "plots", "tables", "diagnostics", "report", "sag", "asd", "flstock"),
+  label = c("Level 1", "Level 2", "Checks", "Model", "Forecast", "Plots", "Tables", "Diagnostics", "Report", "SAG", "ASD", "FLStock"),
+  group = c("Structure", "Structure", "Inputs", "Model", "Model", "Outputs", "Outputs", "Outputs", "Report", "Deliverables", "Deliverables", "Deliverables")
+)
+
+# what is set by hand in _data/template-markers.csv: a marker that does not
+# apply to a method, or one that is done but not found in the code
+set_by_hand <- read.csv("../_data/template-markers.csv", stringsAsFactors = FALSE, na.strings = "")
+
+planned <- is.na(templates$repo)
 files <- strsplit(ifelse(is.na(templates$files), "", templates$files), ";")
 templates$scripts <- vapply(files, function(x) sum(grepl("\\.R$", x)), 1)
-templates$stage <- ifelse(
-  is.na(templates$repo), "Planned",
-  ifelse(templates$scripts > 0, "In development", "Repository created")
-)
-n <- table(factor(templates$stage, c("In development", "Repository created", "Planned")))
+
+# the status of a marker of a template: done, partly, todo or na, with a note shown
+# when the pointer is held over it, and a link to where it was found
+status <- function(i, id) {
+  hand <- set_by_hand[set_by_hand$template == templates$template[i] & set_by_hand$marker == id, ]
+  if (nrow(hand)) {
+    return(list(status = hand$status[1], note = if (is.na(hand$note[1])) "" else hand$note[1], href = NA))
+  }
+  if (planned[i]) return(list(status = "planned", note = "No repository yet", href = NA))
+  if (id %in% c("level1", "level2")) {
+    level <- if (is.na(templates$level[i])) 0 else as.numeric(templates$level[i])
+    qc <- if (is.na(templates$qc[i])) "no QC workflow" else paste("latest QC run:", gsub("_", " ", templates$qc[i]))
+    if (id == "level1") {
+      note <- if (level >= 1) "data.R, model.R, output.R and report.R, with some modelling" else "Not all of data.R, model.R, output.R and report.R, with some modelling"
+      return(list(status = if (level >= 1) "done" else "todo", note = note, href = NA))
+    }
+    return(list(status = if (level >= 2) "done" else "todo", note = paste0("Passes its QC workflow (", qc, ")"), href = templates$qc_url[i]))
+  }
+  blob <- function(path) sprintf("%s/blob/%s/%s", templates$url[i], templates$branch[i], path)
+  path <- templates[[id]][i]
+  if (is.na(path) || !nzchar(path)) {
+    # plots drawn, but not saved to a file
+    drawn <- templates$drawn[i]
+    if (id == "plots" && !is.na(drawn) && nzchar(drawn)) {
+      return(list(status = "partly", note = paste("Drawn in", drawn, "but not saved to a file"), href = blob(drawn)))
+    }
+    return(list(status = "todo", note = "Not found in the code yet", href = NA))
+  }
+  list(status = "done", note = paste("Found in", path), href = blob(path))
+}
+
+cells <- lapply(seq_len(nrow(templates)), function(i) lapply(markers$id, function(id) status(i, id)))
+done <- vapply(cells, function(x) sum(vapply(x, function(m) m$status == "done", TRUE)), 1)
+applicable <- vapply(cells, function(x) sum(vapply(x, function(m) m$status != "na", TRUE)), 1)
+
+stage <- ifelse(planned, "planned", ifelse(templates$scripts > 0, "development", "created"))
+n <- table(factor(stage, c("development", "created", "planned")))
 ```
 
-There are `r nrow(templates)` templates. `r n[["In development"]]` have R scripts in their repositories, `r n[["Repository created"]]` have a repository with only a README so far, and `r n[["Planned"]]` have no repository yet.
+There are `r nrow(templates)` templates. `r n[["development"]]` have R scripts in their repositories, `r n[["created"]]` have a repository with only a README so far, and `r n[["planned"]]` have no repository yet.
+
+## Progress
+
+Each template is checked for the markers below. Hold the pointer over a marker to see where it was found, and click it to go there. The bar is the share of the markers that apply to the template that are done; a marker only partly done is not counted.
+
+- **Structure:** level 1 has the TAF scripts `data.R`, `model.R`, `output.R` and `report.R`, with some modelling. Level 2 also passes the QC workflow of the repository, a GitHub Actions workflow with `qc` in its name. This follows the [TAF readiness level](../system/readiness-level.qmd), though the QC dashboard only covers the repositories in ices-taf.
+- **Inputs:** checks of the input data, such as a data validator.
+- **Model:** the model is fitted, and there is a forecast.
+- **Outputs:** plots saved to files (partly done when plots are drawn but not saved), tables written with `write.taf()` or the like, and diagnostics such as retrospective analyses and residuals.
+- **Report:** a general write-up is made by the report scripts, in Word or from R Markdown or Quarto. A report on the quality assurance of the inputs and outputs is to follow.
+- **Deliverables:** the SAG and ASD XML files for upload, and an FLStock object.
+
+All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_data/template-markers.csv`.
 
 ```{r}
 #| echo: false
-link <- function(url, text) ifelse(is.na(url), "", sprintf("<a href=\"%s\">%s</a>", url, htmltools::htmlEscape(text)))
-issue_url <- ifelse(is.na(templates$issue), NA, paste0("https://github.com/ices-eg/wg_WGTAFGOV/issues/", templates$issue))
-knitr::kable(
-  data.frame(
-    Template = templates$template,
-    Repository = link(templates$url, templates$repo),
-    Issue = link(issue_url, paste0("#", templates$issue)),
-    Stage = templates$stage,
-    "R scripts" = ifelse(is.na(templates$repo), "", templates$scripts),
-    "Last updated" = ifelse(is.na(templates$pushed), "", substr(templates$pushed, 1, 10)),
-    check.names = FALSE
-  ),
-  format = "html", escape = FALSE
+library(htmltools)
+
+groups <- rle(markers$group)
+head_groups <- tags$tr(
+  tags$th(rowspan = 2, scope = "col", "Template"),
+  lapply(seq_along(groups$values), function(g) tags$th(colspan = groups$lengths[g], scope = "colgroup", class = "tpl-group", groups$values[g])),
+  tags$th(rowspan = 2, scope = "col", "Progress")
 )
+head_markers <- tags$tr(lapply(seq_len(nrow(markers)), function(j) {
+  first <- j == 1 || markers$group[j] != markers$group[j - 1]
+  tags$th(scope = "col", class = c("tpl-marker", if (first) "tpl-first"), markers$label[j])
+}))
+
+symbol <- c(done = "●", partly = "◐", todo = "○", na = "–", planned = "◌")
+said <- c(done = "done", partly = "partly done", todo = "not yet", na = "does not apply", planned = "planned")
+
+rows <- lapply(seq_len(nrow(templates)), function(i) {
+  name <- tags$div(
+    class = "tpl-name",
+    if (is.na(templates$url[i])) templates$template[i] else tags$a(href = templates$url[i], templates$template[i]),
+    tags$span(
+      class = "tpl-repo",
+      if (planned[i]) "planned" else sub("/.*", "", templates$repo[i]),
+      if (!is.na(templates$issue[i])) tagList(" · ", tags$a(href = paste0("https://github.com/ices-eg/wg_WGTAFGOV/issues/", templates$issue[i]), paste0("#", templates$issue[i])))
+    )
+  )
+  marks <- lapply(seq_len(nrow(markers)), function(j) {
+    m <- cells[[i]][[j]]
+    title <- paste0(markers$label[j], ": ", said[[m$status]], if (nzchar(m$note)) paste0(". ", m$note))
+    mark <- tags$span(class = paste("tpl-mark", m$status), `aria-hidden` = "true", symbol[[m$status]])
+    hidden <- tags$span(class = "visually-hidden", title)
+    first <- j == 1 || markers$group[j] != markers$group[j - 1]
+    tags$td(
+      class = c("tpl-cell", if (first) "tpl-first"), title = title,
+      if (is.na(m$href)) tagList(mark, hidden) else tags$a(href = m$href, mark, hidden)
+    )
+  })
+  share <- if (applicable[i]) round(100 * done[i] / applicable[i]) else 0
+  bar <- tags$td(
+    class = "tpl-progress",
+    tags$div(
+      class = "progress", role = "progressbar", `aria-label` = paste(templates$template[i], "markers done"),
+      `aria-valuenow` = share, `aria-valuemin` = 0, `aria-valuemax` = 100,
+      tags$div(class = "progress-bar", style = sprintf("width: %d%%", share))
+    ),
+    tags$span(class = "tpl-count", sprintf("%d of %d", done[i], applicable[i]))
+  )
+  tags$tr(class = if (planned[i]) "tpl-planned", tags$th(scope = "row", name), marks, bar)
+})
+
+legend <- tags$p(
+  class = "tpl-legend",
+  lapply(c("done", "partly", "todo", "na", "planned"), function(s) tags$span(tags$span(class = paste("tpl-mark", s), `aria-hidden` = "true", symbol[[s]]), " ", said[[s]]))
+)
+
+tagList(
+  tags$div(class = "tpl-wrap", tags$table(class = "tpl-grid", tags$thead(head_groups, head_markers), tags$tbody(rows))),
+  legend,
+  tags$p(class = "tpl-updated", paste("Updated", format(file.mtime("../_generated/templates.csv"), "%e %B %Y.")))
+)
+```
+
+```{=html}
+<style>
+/* the styles of this page only, kept with it so that they always arrive with it */
+.tpl-wrap { overflow-x: auto; margin: 1rem 0 0.5rem; }
+.tpl-grid { border-collapse: collapse; font-size: 0.875rem; min-width: 100%; }
+.tpl-grid th, .tpl-grid td { padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--bs-border-color); vertical-align: middle; }
+.tpl-grid thead th { font-weight: 600; white-space: nowrap; }
+.tpl-grid .tpl-group { text-align: center; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--bs-secondary-color); border-bottom: none; }
+.tpl-grid .tpl-marker { text-align: center; font-weight: 500; font-size: 0.8rem; }
+.tpl-grid .tpl-first { border-left: 1px solid var(--bs-border-color); }
+.tpl-grid tbody th { font-weight: 600; position: sticky; left: 0; background: var(--bs-body-bg); z-index: 1; min-width: 9rem; }
+.tpl-name { display: flex; flex-direction: column; }
+.tpl-repo { font-weight: 400; font-size: 0.75rem; color: var(--bs-secondary-color); }
+.tpl-cell { text-align: center; }
+.tpl-cell a { text-decoration: none; }
+.tpl-mark { font-size: 1.15rem; line-height: 1; }
+.tpl-mark.done { color: #2a78d6; }
+.tpl-mark.partly { color: #eb6834; }
+.tpl-mark.todo { color: #8c8a83; }
+.tpl-mark.na { color: #c9c7c0; }
+.tpl-mark.planned { color: #c9c7c0; }
+.tpl-planned th, .tpl-planned .tpl-count { color: var(--bs-secondary-color); }
+.tpl-progress { min-width: 8rem; }
+.tpl-progress .progress { height: 0.5rem; }
+.tpl-progress .progress-bar { background-color: #2a78d6; }
+.tpl-count { font-size: 0.75rem; color: var(--bs-secondary-color); }
+.tpl-legend { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.875rem; color: var(--bs-secondary-color); }
+.tpl-updated { font-size: 0.875rem; color: var(--bs-secondary-color); }
+</style>
 ```
