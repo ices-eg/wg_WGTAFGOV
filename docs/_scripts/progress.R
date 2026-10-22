@@ -71,24 +71,47 @@ issue_list <- function(x, date_field = NULL) {
 
 # ---- fetch -----------------------------------------------------------------
 
+gh_api <- function(args) {
+  json <- system2("gh", c("api", args), stdout = TRUE)
+  if (!is.null(attr(json, "status"))) {
+    stop("`gh api ", paste(args, collapse = " "), "` failed")
+  }
+  jsonlite::fromJSON(paste(json, collapse = "\n"), simplifyVector = FALSE)
+}
+
+# the number of issues, without pull requests, to know when all are read
+count_issues <- function() {
+  owner_name <- strsplit(repo, "/", fixed = TRUE)[[1]]
+  query <- sprintf(
+    "{repository(owner:\"%s\",name:\"%s\"){issues{totalCount}}}",
+    owner_name[1], owner_name[2]
+  )
+  gh_api(c("graphql", "-f", shQuote(paste0("query=", query))))$data$repository$issues$totalCount
+}
+
 fetch_issues <- function() {
+  n <- count_issues()
   all <- list()
   page <- 1
-  repeat {
+  tries <- 0
+  # GitHub at times answers a page with an empty list and no link to the
+  # next, so an empty page is only the end once all the issues are read
+  while (length(all) < n) {
     endpoint <- sprintf(
       "repos/%s/issues?state=all&per_page=100&page=%d", repo, page
     )
-    json <- system2("gh", c("api", shQuote(endpoint)), stdout = TRUE)
-    if (!is.null(attr(json, "status"))) {
-      stop("`gh api ", endpoint, "` failed")
+    res <- gh_api(shQuote(endpoint))
+    if (length(res) == 0) {
+      tries <- tries + 1
+      if (tries > 5) stop("read ", length(all), " of ", n, " issues from GitHub")
+      Sys.sleep(tries)
+      next
     }
-    res <- jsonlite::fromJSON(paste(json, collapse = "\n"), simplifyVector = FALSE)
-    if (length(res) == 0) break
-    all <- c(all, res)
+    # the issues endpoint also returns pull requests
+    all <- c(all, Filter(function(i) is.null(i$pull_request), res))
     page <- page + 1
+    tries <- 0
   }
-  # the issues endpoint also returns pull requests
-  all <- Filter(function(i) is.null(i$pull_request), all)
 
   data <- data.frame(
     number = vapply(all, function(i) i$number, 1L),
