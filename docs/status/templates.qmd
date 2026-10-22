@@ -17,17 +17,21 @@ markers <- data.frame(
 )
 
 # what is set by hand in _data/template-markers.csv: a marker that does not
-# apply to a method, or one that is done but not found in the code
+# apply to a method, or one that is done but not found in the code. A method
+# is left empty for the row of the template itself.
 set_by_hand <- read.csv("../_data/template-markers.csv", stringsAsFactors = FALSE, na.strings = "")
 
 planned <- is.na(templates$repo)
+# the rows of the methods of a template, which follow the row of the template
+is_method <- !is.na(templates$method)
 files <- strsplit(ifelse(is.na(templates$files), "", templates$files), ";")
 templates$scripts <- vapply(files, function(x) sum(grepl("\\.R$", x)), 1)
 
 # the status of a marker of a template: done, partly, todo or na, with a note shown
 # when the pointer is held over it, and a link to where it was found
 status <- function(i, id) {
-  hand <- set_by_hand[set_by_hand$template == templates$template[i] & set_by_hand$marker == id, ]
+  same_method <- if (is_method[i]) set_by_hand$method %in% templates$method[i] else is.na(set_by_hand$method)
+  hand <- set_by_hand[set_by_hand$template == templates$template[i] & same_method & set_by_hand$marker == id, ]
   if (nrow(hand)) {
     return(list(status = hand$status[1], note = if (is.na(hand$note[1])) "" else hand$note[1], href = NA))
   }
@@ -36,7 +40,8 @@ status <- function(i, id) {
     level <- if (is.na(templates$level[i])) 0 else as.numeric(templates$level[i])
     qc <- if (is.na(templates$qc[i])) "no QC workflow" else paste("latest QC run:", gsub("_", " ", templates$qc[i]))
     if (id == "level1") {
-      note <- if (level >= 1) "data.R, model.R, output.R and report.R, with some modelling" else "Not all of data.R, model.R, output.R and report.R, with some modelling"
+      scripts <- if (is_method[i]) sprintf("data_%1$s.R, model_%1$s.R, output_%1$s.R and report_%1$s.R", templates$method[i]) else "data.R, model.R, output.R and report.R"
+      note <- paste0(if (level >= 1) "" else "Not all of ", scripts, ", with some modelling")
       return(list(status = if (level >= 1) "done" else "todo", note = note, href = NA))
     }
     return(list(status = if (level >= 2) "done" else "todo", note = paste0("Passes its QC workflow (", qc, ")"), href = templates$qc_url[i]))
@@ -58,11 +63,11 @@ cells <- lapply(seq_len(nrow(templates)), function(i) lapply(markers$id, functio
 done <- vapply(cells, function(x) sum(vapply(x, function(m) m$status == "done", TRUE)), 1)
 applicable <- vapply(cells, function(x) sum(vapply(x, function(m) m$status != "na", TRUE)), 1)
 
-stage <- ifelse(planned, "planned", ifelse(templates$scripts > 0, "development", "created"))
+stage <- ifelse(planned, "planned", ifelse(templates$scripts > 0, "development", "created"))[!is_method]
 n <- table(factor(stage, c("development", "created", "planned")))
 ```
 
-There are `r nrow(templates)` templates. `r n[["development"]]` have R scripts in their repositories, `r n[["created"]]` have a repository with only a README so far, and `r n[["planned"]]` have no repository yet.
+There are `r sum(!is_method)` templates. `r n[["development"]]` have R scripts in their repositories, `r n[["created"]]` have a repository with only a README so far, and `r n[["planned"]]` have no repository yet.
 
 ## Progress
 
@@ -76,6 +81,8 @@ Each template is checked for the markers below. Hold the pointer over a marker t
 - **Deliverables:** the SAG and ASD XML files for upload, and an FLStock object.
 
 All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_data/template-markers.csv`.
+
+Some templates offer several methods, such as the chr, rb and rfb rules of the Category 3 template. Each method has its own row, indented under the template, with the markers found in its own scripts: those with `_<method>` in their name, such as `model_chr.R`. Its level 1 needs its own data, model, output and report scripts, and its level 2 is the QC workflow of the repository. The row of the template is for all its scripts together.
 
 ```{r}
 #| echo: false
@@ -96,13 +103,19 @@ symbol <- c(done = "●", partly = "◐", todo = "○", na = "–", planned = "�
 said <- c(done = "done", partly = "partly done", todo = "not yet", na = "does not apply", planned = "planned")
 
 rows <- lapply(seq_len(nrow(templates)), function(i) {
-  name <- tags$div(
+  n_methods <- sum(is_method & templates$template == templates$template[i])
+  name <- if (is_method[i]) tags$div(
+    class = "tpl-name",
+    tags$code(templates$method[i]),
+    tags$span(class = "tpl-repo", "method of ", templates$template[i])
+  ) else tags$div(
     class = "tpl-name",
     if (is.na(templates$url[i])) templates$template[i] else tags$a(href = templates$url[i], templates$template[i]),
     tags$span(
       class = "tpl-repo",
       if (planned[i]) "planned" else sub("/.*", "", templates$repo[i]),
-      if (!is.na(templates$issue[i])) tagList(" · ", tags$a(href = paste0("https://github.com/ices-eg/wg_WGTAFGOV/issues/", templates$issue[i]), paste0("#", templates$issue[i])))
+      if (!is.na(templates$issue[i])) tagList(" · ", tags$a(href = paste0("https://github.com/ices-eg/wg_WGTAFGOV/issues/", templates$issue[i]), paste0("#", templates$issue[i]))),
+      if (n_methods) paste0(" · ", n_methods, " methods")
     )
   )
   marks <- lapply(seq_len(nrow(markers)), function(j) {
@@ -120,13 +133,15 @@ rows <- lapply(seq_len(nrow(templates)), function(i) {
   bar <- tags$td(
     class = "tpl-progress",
     tags$div(
-      class = "progress", role = "progressbar", `aria-label` = paste(templates$template[i], "markers done"),
+      class = "progress", role = "progressbar", `aria-label` = paste(templates$template[i], if (is_method[i]) templates$method[i], "markers done"),
       `aria-valuenow` = share, `aria-valuemin` = 0, `aria-valuemax` = 100,
       tags$div(class = "progress-bar", style = sprintf("width: %d%%", share))
     ),
     tags$span(class = "tpl-count", sprintf("%d of %d", done[i], applicable[i]))
   )
-  tags$tr(class = if (planned[i]) "tpl-planned", tags$th(scope = "row", name), marks, bar)
+  last_method <- is_method[i] && (i == nrow(templates) || !is_method[i + 1])
+  row_class <- c(if (planned[i]) "tpl-planned", if (is_method[i]) "tpl-method", if (n_methods && !is_method[i]) "tpl-has-methods", if (last_method) "tpl-last-method")
+  tags$tr(class = row_class, tags$th(scope = "row", name), marks, bar)
 })
 
 legend <- tags$p(
@@ -163,6 +178,11 @@ tagList(
 .tpl-mark.na { color: #c9c7c0; }
 .tpl-mark.planned { color: #c9c7c0; }
 .tpl-planned th, .tpl-planned .tpl-count { color: var(--bs-secondary-color); }
+/* the methods of a template, indented under it on a rule, with no lines between them */
+.tpl-grid tr.tpl-has-methods > *, .tpl-grid tr.tpl-method:not(.tpl-last-method) > * { border-bottom-color: transparent; }
+.tpl-grid tr.tpl-method > th { font-weight: 400; padding-left: 1.5rem; background-image: linear-gradient(var(--bs-border-color), var(--bs-border-color)); background-size: 2px 100%; background-position: 0.75rem 0; background-repeat: no-repeat; }
+.tpl-grid tr.tpl-method > th code { font-size: 0.8rem; padding: 0; background: none; color: inherit; }
+.tpl-grid tr.tpl-method .tpl-mark { font-size: 0.95rem; }
 .tpl-progress { min-width: 8rem; }
 .tpl-progress .progress { height: 0.5rem; }
 .tpl-progress .progress-bar { background-color: #2a78d6; }

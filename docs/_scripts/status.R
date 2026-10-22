@@ -644,9 +644,24 @@ qc_run <- function(repo) {
   list(conclusion = if (is.null(runs[[1]]$conclusion)) "in progress" else runs[[1]]$conclusion, url = runs[[1]]$html_url)
 }
 
+# the markers of progress of the code of a template, or of one of its methods:
+# the markers found, and the level. Level 1: the TAF scripts (for a method,
+# its own data, model, output and report scripts, such as model_chr.R), with
+# some modelling. Level 2: also passes the QC workflow of the repository.
+template_progress <- function(code, paths, qc, scripts = taf_scripts) {
+  markers <- vapply(template_markers, find_marker, "", code = code)
+  level <- if (all(scripts %in% paths) && nzchar(markers[["model"]])) {
+    if (qc$conclusion %in% "success") "2" else "1"
+  } else ""
+  c(level = level, markers)
+}
+
 # the templates of templates_file, with the files in the repository of each,
 # separated by semicolons, and where each marker of progress is found. A
-# template with no repository yet is planned.
+# template with no repository yet is planned. A template with several methods
+# (methods, separated by semicolons) is followed by a row for each, with the
+# markers found in the scripts of that method, those with _<method> in their
+# name.
 template_repos <- function() {
   x <- read.csv(templates_file, stringsAsFactors = FALSE, na.strings = "")
   info <- lapply(x$repo, function(repo) if (is.na(repo)) NULL else gh_api(paste0("repos/", repo)))
@@ -656,24 +671,29 @@ template_repos <- function() {
   x$url <- field("html_url")
   x$branch <- field("default_branch")
   x$pushed <- field("pushed_at")
-  found <- lapply(seq_len(nrow(x)), function(i) {
-    none <- c(files = NA_character_, level = NA_character_, qc = NA_character_, qc_url = NA_character_,
+  rows <- lapply(seq_len(nrow(x)), function(i) {
+    row <- x[i, setdiff(names(x), "methods")]
+    row$method <- NA_character_
+    none <- c(files = NA_character_, qc = NA_character_, qc_url = NA_character_, level = NA_character_,
       vapply(template_markers, function(m) NA_character_, ""))
-    if (is.na(x$branch[i])) return(none)
+    if (is.na(x$branch[i])) return(cbind(row, t(none)))
     tree <- gh_api(sprintf("repos/%s/git/trees/%s?recursive=1", x$repo[i], x$branch[i]))
-    if (is.null(tree)) return(none)
+    if (is.null(tree)) return(cbind(row, t(none)))
     paths <- vapply(Filter(function(f) f$type == "blob", tree$tree), function(f) f$path, "")
     code <- template_code(x$repo[i], paths)
-    markers <- vapply(template_markers, find_marker, "", code = code)
     qc <- qc_run(x$repo[i])
-    # level 1: the TAF scripts, with some modelling. Level 2: also passes its
-    # QC workflow
-    level <- if (all(taf_scripts %in% paths) && nzchar(markers[["model"]])) {
-      if (qc$conclusion %in% "success") "2" else "1"
-    } else ""
-    c(files = paste(paths, collapse = ";"), level = level, qc = qc$conclusion, qc_url = qc$url, markers)
+    common <- c(files = paste(paths, collapse = ";"), qc = qc$conclusion, qc_url = qc$url)
+    template <- cbind(row, t(c(common, template_progress(code, paths, qc))))
+    methods <- if (is.na(x$methods[i])) character() else strsplit(x$methods[i], ";")[[1]]
+    by_method <- lapply(methods, function(method) {
+      own <- grepl(paste0("_", method, "\\.R$"), basename(names(code)))
+      scripts <- paste0(sub("\\.R$", "", taf_scripts), "_", method, ".R")
+      row$method <- method
+      cbind(row, t(c(common, template_progress(code[own], paths, qc, scripts))))
+    })
+    do.call(rbind, c(list(template), by_method))
   })
-  cbind(x, as.data.frame(do.call(rbind, found), stringsAsFactors = FALSE))
+  do.call(rbind, rows)
 }
 
 # ---- build -----------------------------------------------------------------

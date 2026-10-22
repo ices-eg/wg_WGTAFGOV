@@ -1,13 +1,13 @@
-template,repo,issue
-SAM,ices-tools-dev/SAM_taf_template,190
-FLSAM,ices-tools-dev/FLSAM_taf_template,191
-SAM from SA,ices-tools-dev/SAMfromSA_taf_template,208
-SESAM from SA,ices-tools-dev/SESAMfromSA_taf_template,207
-SMS,ices-tools-dev/SMS_taf_template,196
-SS3,ices-tools-dev/SS3_taf_template,192
-SPiCT,ices-tools-dev/Spict_taf_template,193
-Category 3,ices-tools-prod/Category3_taf_template,194
-Category 5,ices-tools-dev/Category5_taf_template,
-Fsquared,ices-tools-prod/Fsquared_taf_template,195
-Nephrops,,209
-National estimation,,223
+template,repo,issue,methods
+SAM,ices-tools-dev/SAM_taf_template,190,
+FLSAM,ices-tools-dev/FLSAM_taf_template,191,
+SAM from SA,ices-tools-dev/SAMfromSA_taf_template,208,
+SESAM from SA,ices-tools-dev/SESAMfromSA_taf_template,207,
+SMS,ices-tools-dev/SMS_taf_template,196,
+SS3,ices-tools-dev/SS3_taf_template,192,
+SPiCT,ices-tools-dev/Spict_taf_template,193,
+Category 3,ices-tools-prod/Category3_taf_template,194,chr;rb;rfb
+Category 5,ices-tools-dev/Category5_taf_template,,
+Fsquared,ices-tools-prod/Fsquared_taf_template,195,
+Nephrops,,209,
+National estimation,,223,
