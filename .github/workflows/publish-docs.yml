@@ -24,6 +24,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # a normal build takes about 5 minutes; fail a hung one rather than wait
+    timeout-minutes: 15
 
     steps:
     - name: checkout
