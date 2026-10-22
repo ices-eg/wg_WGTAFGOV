@@ -9,3 +9,6 @@ TAF_Manifesto/*.html
 /renv/
 renv.lock
 .Rprofile
+
+# clones of the TAF templates, see docs/_scripts/clone-templates.sh
+/templates/
