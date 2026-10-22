@@ -2,7 +2,7 @@
 title: "TAF templates"
 ---
 
-A TAF template is a complete, well documented TAF analysis for an assessment method. It follows the TAF structure and gives all the standard plots, tables and diagnostics. It also creates the outputs that are needed, such as the uploads to SAG and the ASD and an FLStock object. The development of the templates is planned on the [project board](https://github.com/orgs/ices-eg/projects/10/views/5?sliceBy%5Bvalue%5D=ices-eg%2Fwg_WGTAFGOV%23189), under the [Sprint: templates](../progress.qmd) issues. The repositories are in [ices-tools-dev](https://github.com/ices-tools-dev) while they are developed, and some are moved to [ices-tools-prod](https://github.com/ices-tools-prod).
+A TAF template is a complete, well documented TAF analysis for an assessment method. It follows the TAF structure and gives all the standard plots, tables and diagnostics. It also creates the outputs that are needed, such as the uploads to SAG and the ASD and an FLStock object. The development of the templates is planned on the [project board](https://github.com/orgs/ices-eg/projects/10/views/5?sliceBy%5Bvalue%5D=ices-eg%2Fwg_WGTAFGOV%23189), under the [Sprint: templates](../progress.qmd) issues. The repositories are in [ices-tools-dev](https://github.com/ices-tools-dev).
 
 ```{r}
 #| include: false
