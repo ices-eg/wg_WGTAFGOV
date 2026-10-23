@@ -12,3 +12,5 @@ renv.lock
 
 # clones of the TAF templates, see scripts/clone-templates.sh
 /templates/
+
+.claude/worktrees/
