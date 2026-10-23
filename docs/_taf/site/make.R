@@ -19,20 +19,29 @@
 
 library(TAF)
 
-# source.taf() reports a failed script and carries on: stop instead, so that
-# the site is never built from half the data
-run <- function(script) {
-  if (!source.taf(script)) stop(script, " failed")
+# run a step with make() in an R session of its own, as the scripts leave
+# their objects in the global environment, with the libraries of this one (as
+# with renv). source.taf() only reports a failed script: stop instead, so that
+# the site is never built from half the data, and remove what the step wrote,
+# so that it is not taken as up to date next time.
+step <- function(recipe, prereq, target, run, force = FALSE) {
+  make(recipe, prereq, target, force = force, quiet = FALSE, engine = function(recipe) {
+    status <- system2(
+      "Rscript", c("-e", shQuote(sprintf("library(TAF); quit(status = if (isTRUE(%s)) 0 else 1)", run))),
+      env = paste0("R_LIBS=", paste(.libPaths(), collapse = .Platform$path.sep))
+    )
+    if (status != 0) {
+      unlink(target, recursive = TRUE)
+      stop(recipe, " failed")
+    }
+  })
 }
 
-# the boot scripts run in the global environment, where they could replace a
-# helper of this script, so the files are listed in each call
-make(
+step(
   "boot/DATA.bib",
   c(dir("boot", pattern = "[.]R$", full.names = TRUE), dir("boot/initial", recursive = TRUE, full.names = TRUE)),
-  "boot/data",
-  engine = function(recipe) taf.boot(force = TRUE),
-  force = "boot" %in% commandArgs(trailingOnly = TRUE), quiet = FALSE
+  "boot/data", "{taf.boot(force = TRUE); TRUE}",
+  force = "boot" %in% commandArgs(trailingOnly = TRUE)
 )
-make("data.R", c("utilities.R", dir("boot/data", recursive = TRUE, full.names = TRUE)), "data", engine = run, quiet = FALSE)
-make("report.R", c("utilities.R", dir("data", recursive = TRUE, full.names = TRUE)), "report", engine = run, quiet = FALSE)
+step("data.R", c("utilities.R", dir("boot/data", recursive = TRUE, full.names = TRUE)), "data", "source.taf('data.R')")
+step("report.R", c("utilities.R", dir("data", recursive = TRUE, full.names = TRUE)), "report", "source.taf('report.R')")
