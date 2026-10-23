@@ -1,0 +1,2 @@
+# check out text files with Unix line endings everywhere, also on Windows
+* text=auto eol=lf
