@@ -1,6 +1,6 @@
 # WGTAFGOV
 
-The working group on the governance of the Transparent Assessment Framework (TAF). The documentation site is in `docs/`, a Quarto website published to <https://ices-eg.github.io/wg_WGTAFGOV/>; see `docs/README.md` for how it is built and what each data file is. The data of the pages are gathered as two TAF analyses, `docs/_taf/advice/` (weekly) and `docs/_taf/site/` (each build), each run by its `make.R`; the files edited by hand are in `docs/_taf/site/boot/initial/data/`.
+The working group on the governance of the Transparent Assessment Framework (TAF). The documentation site is in `docs/`, a Quarto website published to <https://ices-eg.github.io/wg_WGTAFGOV/>; see `docs/README.md` for how it is built and what each data file is. The data of the pages are gathered as two TAF analyses, `docs/_taf/advice/` (weekly) and `docs/_taf/site/` (each build), each run by its `make.R`; the files edited by hand are in `docs/_taf/site/boot/initial/data/`. Before changing a TAF analysis, here or in a template, read `claude_taf.md`: how TAF really behaves and the rules to follow.
 
 ## Issues and the project board
 
