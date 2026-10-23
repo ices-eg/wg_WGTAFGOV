@@ -16,7 +16,7 @@ Admins can rerun the update action here: [UpdateAdvice](https://github.com/ices-
 #| include: false
 source("_plot.R")
 
-sheets <- read.csv("../_generated/advice-sheets.csv")
+sheets <- read.csv("../_taf/site/data/advice-sheets.csv")
 
 # what was found, with the problems first
 statuses <- c(

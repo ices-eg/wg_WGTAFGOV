@@ -8,11 +8,13 @@ on:
     branches:
       - master
   schedule:
-    # nightly, so the progress pages follow the issue tracker
+    # nightly, so the status and progress pages follow GitHub and ICES
     - cron: '0 3 * * *'
 
 permissions:
-  contents: read
+  # contents: write to upload the products of the build to the release
+  # taf-site, see docs/_taf/site/boot/previous.R
+  contents: write
   issues: read
   pages: write
   id-token: write
@@ -30,6 +32,9 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v4
+      with:
+        # the history, to tell which files have changed since the last build
+        fetch-depth: 0
 
     - name: Set up Quarto
       uses: quarto-dev/quarto-actions/setup@v2
@@ -44,7 +49,9 @@ jobs:
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
         packages: |
+          any::TAF
           any::jsonlite
+          any::curl
           any::icesVocab
           any::knitr
           any::rmarkdown
@@ -53,18 +60,54 @@ jobs:
           any::crosstalk
           any::htmltools
 
-    - name: read issue status from GitHub
-      run: Rscript _scripts/progress.R
-      working-directory: docs
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # what the last successful build made in docs/_taf/site: the data read by
+    # the boot scripts, the tables and the fragments. The newest cache is
+    # restored, and a new one saved at the end of a successful build.
+    - name: restore the last build
+      uses: actions/cache@v4
+      with:
+        path: |
+          docs/_taf/site/boot/data
+          docs/_taf/site/data
+          docs/_taf/site/report
+          docs/_taf/site/.built-commit
+        key: taf-site-${{ github.run_id }}-${{ github.run_attempt }}
+        restore-keys: taf-site-
 
-    - name: read repository status from GitHub
-      run: Rscript _scripts/status.R
-      working-directory: docs
+    # make.R runs a step when one of its files is newer than what the step
+    # made. The checkout gives every file the time it was checked out, which
+    # is newer than anything in the cache, so everything would run again.
+    # Instead, the files in docs/_taf/site that have not changed since the
+    # commit the cache was made from are given a time long ago, and those that
+    # have keep the time of the checkout. The time of the commit is not used: a
+    # commit can be older than the last build and yet not be in it, as when
+    # it is pushed later or comes in with a merge. With no cache, or a commit
+    # that is not in the history, every file stays new and everything runs.
+    - name: date the files by when they changed
+      working-directory: docs/_taf/site
+      run: |
+        built=$(cat .built-commit 2>/dev/null || true)
+        if [ -n "$built" ] && git cat-file -e "$built^{commit}" 2>/dev/null; then
+          git ls-files -z . | xargs -0 touch -d '2000-01-01 00:00:00'
+          git diff -z --name-only --relative --diff-filter=d "$built" HEAD -- . | xargs -0 -r touch
+          echo "changed since $built:"
+          git diff --name-only --relative "$built" HEAD -- .
+        fi
+
+    # boot reads everything again from GitHub and ICES on the nightly build
+    # (and when run by hand), otherwise only when the boot scripts or files
+    # have changed; data.R and report.R run when what they read has changed
+    - name: read the data
+      working-directory: docs/_taf/site
+      run: Rscript make.R ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'boot' || '' }}
       env:
         # needs read access to the private repositories in ices-taf
         GH_TOKEN: ${{ secrets.TAF_STATUS_TOKEN || secrets.GITHUB_TOKEN }}
+        # the issues of this repository
+        ISSUES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: record the commit the data were made from
+      run: git rev-parse HEAD > docs/_taf/site/.built-commit
 
     - name: build site
       run: quarto render docs
@@ -73,6 +116,19 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: docs/_site
+
+    # what the next build starts from, so that it only reads the repositories
+    # pushed to since. Nothing is committed: data only flow forwards.
+    - name: upload the products to the release taf-site
+      working-directory: docs/_taf/site/boot/data/github_repos
+      run: |
+        gh release view taf-site > /dev/null 2>&1 ||
+          gh release create taf-site --title "TAF site data" --latest=false \
+            --notes "What the last build of the site read of the repositories, for the next build to start from. Uploaded by the PublishDocs workflow."
+        gh release upload taf-site model-scripts.csv data-sources.csv --clobber
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ github.repository }}
 
   deploy:
     needs: build

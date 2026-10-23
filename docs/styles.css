@@ -1,4 +1,4 @@
-/* Progress tables and bars written by _scripts/progress.R */
+/* Progress tables and bars written by _taf/site/report.R */
 .taf-progress td, .taf-progress th { vertical-align: middle; }
 .taf-progress .progress { min-width: 8rem; height: 0.9rem; }
 .taf-progress .num { text-align: right; white-space: nowrap; }
@@ -8,7 +8,7 @@
 .taf-updated { color: var(--bs-secondary-color); font-size: 0.9rem; }
 .taf-issues { padding-left: 1.2rem; }
 
-/* Status pages: tiles written by _scripts/status.R */
+/* Status pages: tiles written by _taf/site/report.R */
 .taf-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.75rem; margin: 1rem 0; }
 .taf-tile { border: 1px solid var(--bs-border-color); border-radius: 0.375rem; padding: 0.75rem 1rem; }
 .taf-tile-value { font-size: 1.75rem; font-weight: 600; line-height: 1.2; }

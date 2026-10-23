@@ -1,6 +1,6 @@
 # WGTAFGOV
 
-The working group on the governance of the Transparent Assessment Framework (TAF). The documentation site is in `docs/`, a Quarto website published to <https://ices-eg.github.io/wg_WGTAFGOV/>; see `docs/README.md` for how it is built and what each data file is.
+The working group on the governance of the Transparent Assessment Framework (TAF). The documentation site is in `docs/`, a Quarto website published to <https://ices-eg.github.io/wg_WGTAFGOV/>; see `docs/README.md` for how it is built and what each data file is. The data of the pages are gathered as two TAF analyses, `docs/_taf/advice/` (weekly) and `docs/_taf/site/` (each build), each run by its `make.R`; the files edited by hand are in `docs/_taf/site/boot/initial/data/`.
 
 ## Issues and the project board
 
@@ -13,7 +13,7 @@ The working group on the governance of the Transparent Assessment Framework (TAF
 
 A TAF template is a complete, well documented TAF analysis for an assessment method: standard plots, tables and diagnostics, a general report, and the SAG and ASD XML files and an FLStock object.
 
-- The templates are listed in `docs/_data/templates.csv`, with their repository in ices-tools-dev or ices-tools-prod, their Feature issue under the EPIC #189, and their methods, if they offer several (Category 3: chr, rb and rfb).
-- Their progress is shown on `docs/status/templates.qmd`. `docs/_scripts/status.R` (`template_markers`) finds the markers in the code of each repository on GitHub. A marker that does not apply to a method is set in `docs/_data/template-markers.csv`.
+- The templates are listed in `docs/_taf/site/boot/initial/data/templates.csv`, with their repository in ices-tools-dev or ices-tools-prod, their Feature issue under the EPIC #189, and their methods, if they offer several (Category 3: chr, rb and rfb).
+- Their progress is shown on `docs/status/templates.qmd`. `docs/_taf/site/boot/github_repos.R` (`template_markers`) finds the markers in the code of each repository on GitHub. A marker that does not apply to a method is set in `docs/_taf/site/boot/initial/data/template-markers.csv`.
 - Each Task issue of a template matches a marker on that page, given in its body. When a task is done, its marker should turn on at the next build of the site.
-- Clones of the template repositories are in `templates/`, one folder for each, made and updated by `docs/_scripts/clone-templates.sh`. The folder is ignored by git: each clone is its own repository, committed and pushed on its own. Search a clone by giving its path, since searches of this repository leave out ignored files.
+- Clones of the template repositories are in `templates/`, one folder for each, made and updated by `scripts/clone-templates.sh`. The folder is ignored by git: each clone is its own repository, committed and pushed on its own. Search a clone by giving its path, since searches of this repository leave out ignored files.

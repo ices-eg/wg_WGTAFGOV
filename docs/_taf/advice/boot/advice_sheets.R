@@ -1,8 +1,9 @@
-# Update the list of ICES advice sheets, and the GitHub links in them.
+# The list of ICES advice sheets, and the GitHub links in them.
 #
-# Run from the docs/ folder. Not run when the site is built: the result is
-# _data/advice-sheets.csv, which is committed, and is updated once a week by
-# the UpdateAdvice workflow. _scripts/status.R reads it at each build.
+# advice-sheets.csv: the advice sheets, starting from those the previous run
+# read (../previous/advice-sheets.csv), with what is new or changed since.
+# The site chooses the current sheet of each stock and year, see
+# _taf/site/data.R.
 #
 # The advice sheets are the "ICES Advice: Recurrent advice" group in the ICES
 # library, read with the figshare API. Only advice from first_year on is of
@@ -16,7 +17,8 @@
 # organisations. These are hyperlinks, not text, so are looked for in the
 # contents of the file rather than in the text of the pages.
 
-data_file <- "_data/advice-sheets.csv"
+data_file <- "advice-sheets.csv"
+previous_file <- "../previous/advice-sheets.csv"
 first_year <- 2024
 api <- "https://api.figshare.com/v2"
 # ICES Advice: Recurrent advice
@@ -26,8 +28,6 @@ columns <- c(
   "id", "modified", "year", "stock", "published", "doi", "url", "title",
   "pdf_id", "pdf_url", "links"
 )
-
-dir.create(dirname(data_file), showWarnings = FALSE)
 
 # ---- the figshare API ------------------------------------------------------
 
@@ -150,15 +150,19 @@ pdf_links <- function(file) {
 
 stock_codes <- icesVocab::getCodeList("ICES_StockCode")$Key
 
-known <- if (file.exists(data_file)) {
-  read.csv(data_file, colClasses = "character", na.strings = "NA")
+known <- if (file.exists(previous_file)) {
+  read.csv(previous_file, colClasses = "character", na.strings = "NA")
 } else {
   setNames(data.frame(matrix(character(), 0, length(columns)), stringsAsFactors = FALSE), columns)
 }
 known$year <- as.numeric(known$year)
 
-# read the details of the sheets that are new or modified
-listed <- list_sheets()
+# read the details of the sheets that are new or modified. If the library
+# cannot be read, what the previous run read still holds.
+listed <- tryCatch(list_sheets(), error = function(e) {
+  warning("Could not list the advice sheets, keeping those read before: ", conditionMessage(e))
+  known[c("id", "modified")]
+})
 message(nrow(listed), " advice sheets added to the library since ", first_year)
 new <- which(!paste(listed$id, listed$modified) %in% paste(known$id, known$modified))
 if (length(new)) message("reading the details of ", length(new), " advice sheets")

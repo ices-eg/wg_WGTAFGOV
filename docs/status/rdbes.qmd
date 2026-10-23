@@ -121,7 +121,7 @@ The connection from an assessment to the advice is the link from the [advice she
 
 A stock is **connected end to end** when every part of its chain runs and every connection in it is made.
 
-The countries with data for each stock are in [`docs/_data/rdbes-stock-countries.csv`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes-stock-countries.csv). The stocks, the year and the statuses recorded by hand are in [`docs/_data/rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_data/rdbes.json). A country with data for a stock but no national estimation repository yet is shown as **No repository**.
+The countries with data for each stock are in [`docs/_taf/site/boot/initial/data/rdbes-stock-countries.csv`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_taf/site/boot/initial/data/rdbes-stock-countries.csv). The stocks, the year and the statuses recorded by hand are in [`docs/_taf/site/boot/initial/data/rdbes.json`](https://github.com/ices-eg/wg_WGTAFGOV/blob/master/docs/_taf/site/boot/initial/data/rdbes.json). A country with data for a stock but no national estimation repository yet is shown as **No repository**.
 
 ```{=html}
 <script>

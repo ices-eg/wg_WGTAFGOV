@@ -1,10 +1,11 @@
 # The RDBES workflow page, status/rdbes.qmd: the diagram, the tables and the
-# summary, from _data/rdbes.json and what _scripts/status.R found in GitHub.
+# summary, from _taf/site/boot/initial/data/rdbes.json and what
+# _taf/site/boot/github_repos.R found in GitHub.
 
-rdbes <- jsonlite::fromJSON("../_data/rdbes.json")
-rdbes_repos <- read.csv("../_generated/rdbes-repos.csv")
-taf_repos <- read.csv("../_generated/taf-repos.csv")
-sheets <- read.csv("../_generated/advice-sheets.csv")
+rdbes <- jsonlite::fromJSON("../_taf/site/data/rdbes.json")
+rdbes_repos <- read.csv("../_taf/site/data/rdbes-repos.csv")
+taf_repos <- read.csv("../_taf/site/data/taf-repos.csv")
+sheets <- read.csv("../_taf/site/data/advice-sheets.csv")
 
 # the countries with data for each stock of the RDBES workflow: one row for
 # each stock, with the countries separated by commas
@@ -14,7 +15,7 @@ read_stock_countries <- function(file) {
   data.frame(stock = rep(x$StockCode, lengths(countries)), country = trimws(unlist(countries)))
 }
 
-pairs <- read_stock_countries("../_data/rdbes-stock-countries.csv")
+pairs <- read_stock_countries("../_taf/site/data/rdbes-stock-countries.csv")
 
 year <- rdbes$year
 # the countries named, and those with data for a stock
@@ -42,11 +43,12 @@ node_statuses <- data.frame(
 
 # what can be said of a connection between two parts. It is found in the
 # code: connected when the first uploads to the RDBES and the second downloads
-# from it, see _scripts/status.R. Broken can only be recorded by hand.
+# from it, see _taf/site/boot/github_repos.R. Broken can only be recorded by
+# hand.
 link_statuses <- data.frame(
   key = c("connected", "partial", "not-connected", "broken"),
   label = c("Connected", "Partly connected", "Not connected", "Broken"),
-  # as written in _data/rdbes.json
+  # as written in rdbes.json
   value = c("connected", "partly connected", "not connected", "broken"),
   symbol = c("\u25CF", "\u25D0", "\u25CB", "\u2715"),
   title = c(
@@ -61,7 +63,7 @@ link_key <- function(value) {
   link_statuses$key[match(tolower(value), link_statuses$value)]
 }
 
-# a status set by hand in _data/rdbes.json, which is taken over what is found
+# a status set by hand in rdbes.json, which is taken over what is found
 # in GitHub: there is no automatic run test yet
 override <- function(name, field) {
   x <- rdbes$repositories[[name]][[field]]
@@ -142,8 +144,8 @@ connection <- function(from, to, status = NA) {
 }
 
 # the connections from the countries to the stocks: those with data, from
-# _data/rdbes-stock-countries.csv, with any status or note recorded by hand
-# for them in _data/rdbes.json
+# rdbes-stock-countries.csv, with any status or note recorded by hand
+# for them in rdbes.json
 links <- pairs[pairs$stock %in% stocks, ]
 set <- if (length(rdbes$links)) as.data.frame(rdbes$links) else data.frame(country = character(), stock = character())
 i <- match(paste(links$country, links$stock), paste(set$country, set$stock))

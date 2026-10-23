@@ -83,7 +83,7 @@ readiness_levels <- c("No level", paste("Level", 1:4))
 readiness_colours <- setNames(c("#d5d4ce", "#9ec5f4", "#3987e5", "#1c5cab", "#0d366b"), readiness_levels)
 
 # the assessments as they are listed, from the repositories written by
-# _scripts/status.R
+# _taf/site/data.R
 readiness_assessments <- function(repos) {
   assessments <- data.frame(
     Year = as.character(repos$year),
