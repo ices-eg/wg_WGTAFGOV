@@ -5,7 +5,7 @@ toc: false
 
 The Transparent Assessment Framework (TAF) is the ICES platform for recording, documenting and running the stock assessments and analyses that support scientific advice. This site describes how the system is designed, where it is heading, and how the work is progressing.
 
-{{< include _generated/summary.md >}}
+{{< include _taf/site/report/summary.md >}}
 
 ::: {.grid}
 
@@ -40,7 +40,7 @@ Issue status by workstream and area, updated automatically from GitHub.
 ```{r}
 #| include: false
 source("status/_plot.R")
-repos <- read.csv("_generated/taf-repos.csv")
+repos <- read.csv("_taf/site/data/taf-repos.csv")
 ```
 
 The stock assessment repositories by year and [TAF readiness level](system/readiness-level.qmd): `r sum(repos$trl >= 1, na.rm = TRUE)` of the `r nrow(repos)` have their code on GitHub, and `r sum(repos$trl >= 2, na.rm = TRUE)` of those pass the QC test. The green blocks are the published assessments of the year, repeated on top of the not published to show the total. The assessments with no level are left out to begin with: click **No level** in the legend to add them. The assessments behind each bar are listed under [TAF readiness](status/readiness.qmd).

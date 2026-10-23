@@ -4,24 +4,24 @@ title: "Progress"
 
 This page is generated from the [issue tracker](https://github.com/ices-eg/wg_WGTAFGOV/issues) each time the site is built. For task-level status see the [project board](https://github.com/orgs/ices-eg/projects/10).
 
-{{< include _generated/summary.md >}}
+{{< include _taf/site/report/summary.md >}}
 
 ## By workstream
 
-{{< include _generated/sprints.md >}}
+{{< include _taf/site/report/sprints.md >}}
 
 ## By area
 
-{{< include _generated/areas.md >}}
+{{< include _taf/site/report/areas.md >}}
 
 ## High priority open issues
 
-{{< include _generated/priority.md >}}
+{{< include _taf/site/report/priority.md >}}
 
 ## Recently closed
 
-{{< include _generated/closed.md >}}
+{{< include _taf/site/report/closed.md >}}
 
 ## Recently opened
 
-{{< include _generated/opened.md >}}
+{{< include _taf/site/report/opened.md >}}

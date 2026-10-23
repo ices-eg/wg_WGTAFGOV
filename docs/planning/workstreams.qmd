@@ -14,22 +14,22 @@ The workstream descriptions are placeholders and still need to be written.
 
 *Description to be written.*
 
-{{< include ../_generated/sprint-development.md >}}
+{{< include ../_taf/site/report/sprint-development.md >}}
 
 ## Governance
 
 Governance priorities.
 
-{{< include ../_generated/sprint-governance.md >}}
+{{< include ../_taf/site/report/sprint-governance.md >}}
 
 ## Strategy
 
 *Description to be written.*
 
-{{< include ../_generated/sprint-strategy.md >}}
+{{< include ../_taf/site/report/sprint-strategy.md >}}
 
 ## Templates
 
 *Description to be written.*
 
-{{< include ../_generated/sprint-templates.md >}}
+{{< include ../_taf/site/report/sprint-templates.md >}}

@@ -1,5 +1,12 @@
 /_site/
 /.quarto/
-/_generated/
+
+# made by the make.R of each TAF analysis in _taf: what the boot scripts
+# read, the tables and the fragments, and in GitHub Actions the commit they
+# were made from
+/_taf/*/boot/data/
+/_taf/*/data/
+/_taf/*/report/
+/_taf/*/.built-commit
 
 **/*.quarto_ipynb

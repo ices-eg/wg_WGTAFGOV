@@ -2,11 +2,11 @@ name: UpdateAdvice
 on:
   workflow_dispatch:
   schedule:
-    # weekly: new advice sheets and the links to GitHub in them, and the
-    # model scripts of the repositories pushed to during the week
+    # weekly: new advice sheets and the links to GitHub in them
     - cron: '0 2 * * 1'
 
 permissions:
+  # to upload the product to the release taf-advice
   contents: write
 
 jobs:
@@ -27,27 +27,27 @@ jobs:
       uses: r-lib/actions/setup-r-dependencies@v2
       with:
         packages: |
+          any::TAF
           any::jsonlite
           any::curl
           any::icesVocab
 
+    # always reads the ICES library again, starting from the advice sheets of
+    # the last run (boot/previous.R), so nothing needs to be kept between
+    # runs in a cache, and the dates of the files do not matter
     - name: read new advice sheets from the ICES library
-      run: Rscript _scripts/advice.R
-      working-directory: docs
+      run: Rscript make.R boot
+      working-directory: docs/_taf/advice
 
-    # keeps the site quick to build: see docs/_scripts/status.R
-    - name: read the repositories pushed to since last time
-      run: Rscript _scripts/status.R
-      working-directory: docs
-      env:
-        # needs read access to the private repositories in ices-taf
-        GH_TOKEN: ${{ secrets.TAF_STATUS_TOKEN || secrets.GITHUB_TOKEN }}
-
-    # the site picks this up at its next build
-    - name: commit the data
+    # the site and the next run take it from there. Nothing is committed:
+    # data only flow forwards.
+    - name: upload the product to the release taf-advice
+      working-directory: docs/_taf/advice/data
       run: |
-        git config --local user.email "github@ices.dk"
-        git config --local user.name "ices-github-bot"
-        git add docs/_data
-        git diff --cached --quiet || git commit -m "Update advice sheets and repository data"
-        git push
+        gh release view taf-advice > /dev/null 2>&1 ||
+          gh release create taf-advice --title "TAF advice sheets" --latest=false \
+            --notes "The ICES advice sheets from 2024 on and the GitHub links in them, read once a week by the UpdateAdvice workflow (docs/_taf/advice). The site and the next run take them from here."
+        gh release upload taf-advice advice-sheets.csv --clobber
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPO: ${{ github.repository }}

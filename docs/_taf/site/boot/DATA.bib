@@ -1,0 +1,100 @@
+@Misc{templates.csv,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {TAF templates},
+  description = {The TAF templates shown on status/templates.qmd: the repository of each in ices-tools-dev or ices-tools-prod (empty for a planned template), its Feature issue on the project board and, for a template that offers several methods, their names separated by semicolons. Edited by hand.},
+  period     = {2026},
+  access     = {Public},
+  source     = {file},
+}
+
+@Misc{template-markers.csv,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {Markers of progress of the TAF templates set by hand},
+  description = {Markers of progress set by hand for a template on status/templates.qmd, by template, method and marker, with a status of done, partly, todo or na and an optional note. These take the place of what is found in the code. Edited by hand.},
+  period     = {2026},
+  access     = {Public},
+  source     = {file},
+}
+
+@Misc{rdbes.json,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {The RDBES workflow},
+  description = {The year and stocks of the RDBES workflow shown on status/rdbes.qmd, the countries to show even with no data for a stock, and the statuses and notes recorded by hand for connections and repositories. Edited by hand.},
+  period     = {2026},
+  access     = {Public},
+  source     = {file},
+}
+
+@Misc{rdbes-stock-countries.csv,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {Countries with data for each stock of the RDBES workflow},
+  description = {One row for each stock, with the countries separated by commas in the form the RDBES gives them: the connections from the national estimation repositories to the stock coordination repositories. Edited by hand for now.},
+  period     = {2026},
+  access     = {Public},
+  source     = {file},
+}
+
+@Misc{repo-types.json,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {Types of TAF repository},
+  description = {The types of TAF repository shown on status/stock-repos.qmd, by the pattern of their names, the column or lane each is drawn in, the connections expected between them and the members of the mixed fisheries repositories. Edited by hand.},
+  period     = {2026},
+  access     = {Public},
+  source     = {file},
+}
+
+@Misc{qc,
+  originator = {ICES},
+  year       = {2026},
+  title      = {TAF QC results},
+  description = {The results of the QC test of the ices-taf repositories, one entry for each repository tested, from the taf-qc-dashboard repository.},
+  period     = {2026},
+  access     = {Public},
+  source     = {https://raw.githubusercontent.com/ices-tools-prod/taf-qc-dashboard/main/json/master.json},
+  dir        = {TRUE},
+}
+
+@Misc{previous,
+  originator = {WGTAFGOV},
+  year       = {2026},
+  title      = {The products of the last runs},
+  description = {What the previous build of the site read of the repositories (model-scripts.csv and data-sources.csv, from the release taf-site), so that this build only reads what is new, and the advice sheets read by the advice analysis (advice-sheets.csv, from the release taf-advice). Before the first releases, the files committed to the repository until then.},
+  period     = {2024-2026},
+  access     = {Public},
+  source     = {script},
+}
+
+@Misc{ices,
+  originator = {ICES},
+  year       = {2026},
+  title      = {ICES stock codes and stock list},
+  description = {The stock codes of the ICES vocabulary (ICES_StockCode, read with icesVocab), and the stocks of each year from 2018 on in the ICES Stock Database, with their expert group and data category.},
+  period     = {2018-2026},
+  access     = {Public},
+  source     = {script},
+}
+
+@Misc{github_issues,
+  originator = {GitHub},
+  year       = {2026},
+  title      = {Issues of the working group},
+  description = {The issues of ices-eg/wg_WGTAFGOV, without pull requests, with their state, dates and labels, read with the GitHub CLI.},
+  period     = {2026},
+  access     = {Public},
+  source     = {script},
+}
+
+@Misc{github_repos,
+  originator = {GitHub},
+  year       = {2026},
+  title      = {TAF repositories on GitHub},
+  description = {The repositories of the ices-taf and ices-advice organisations, and what is found in their files with the GitHub CLI: the size of the model scripts, the repositories each takes data from, the connections to the RDBES of the RDBES workflow repositories, and the markers of progress of the TAF templates. Most ices-taf repositories are private: their names are kept, and what is found in them, but none of their code.},
+  period     = {2026},
+  access     = {Restricted},
+  source     = {script},
+}

@@ -6,20 +6,20 @@ A TAF template is a complete, well documented TAF analysis for an assessment met
 
 ```{r}
 #| include: false
-templates <- read.csv("../_generated/templates.csv", stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
+templates <- read.csv("../_taf/site/data/templates.csv", stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
 
 # the markers of progress, in the groups they are shown in. Those after
-# level are found in the code by _scripts/status.R.
+# level are found in the code by _taf/site/boot/github_repos.R.
 markers <- data.frame(
   id = c("level1", "level2", "inputs", "model", "forecast", "plots", "tables", "diagnostics", "report", "sag", "asd", "flstock"),
   label = c("Level 1", "Level 2", "Checks", "Model", "Forecast", "Plots", "Tables", "Diagnostics", "Report", "SAG", "ASD", "FLStock"),
   group = c("Structure", "Structure", "Inputs", "Model", "Model", "Outputs", "Outputs", "Outputs", "Report", "Deliverables", "Deliverables", "Deliverables")
 )
 
-# what is set by hand in _data/template-markers.csv: a marker that does not
-# apply to a method, or one that is done but not found in the code. A method
-# is left empty for the row of the template itself.
-set_by_hand <- read.csv("../_data/template-markers.csv", stringsAsFactors = FALSE, na.strings = "")
+# what is set by hand in _taf/site/boot/initial/data/template-markers.csv:
+# a marker that does not apply to a method, or one that is done but not
+# found in the code. A method is left empty for the row of the template itself.
+set_by_hand <- read.csv("../_taf/site/data/template-markers.csv", stringsAsFactors = FALSE, na.strings = "")
 
 planned <- is.na(templates$repo)
 # the rows of the methods of a template, which follow the row of the template
@@ -139,7 +139,7 @@ legend <- tags$p(
 tagList(
   tags$div(class = "tpl-wrap", tags$table(class = "tpl-grid", tags$thead(head_groups, head_markers), tags$tbody(rows))),
   legend,
-  tags$p(class = "tpl-updated", paste("Updated", format(file.mtime("../_generated/templates.csv"), "%e %B %Y.")))
+  tags$p(class = "tpl-updated", paste("Updated", format(file.mtime("../_taf/site/data/templates.csv"), "%e %B %Y.")))
 )
 ```
 
@@ -152,7 +152,7 @@ Each template is checked for the markers below. Hold the pointer over a marker t
 - **Report:** a general write-up is made by the report scripts, in Word or from R Markdown or Quarto. A report on the quality assurance of the inputs and outputs is to follow.
 - **Deliverables:** the SAG and ASD XML files for upload, and an FLStock object.
 
-All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_data/template-markers.csv`.
+All the R scripts of a repository are looked at, also those whose `source()` lines are commented out in the TAF scripts: a template can offer scripts for the user to choose whether to run, and having the script there is what counts. Comments are left out. A marker that does not apply to a method, or one that is done but not found this way, is set by hand in `_taf/site/boot/initial/data/template-markers.csv`.
 
 Some templates offer several methods, such as the chr, rb and rfb rules of the Category 3 template. Each method has its own row, indented under the template, with the markers found in its own scripts: those with `_<method>` in their name, such as `model_chr.R`. Its level 1 needs its own data, model, output and report scripts, and its level 2 is the QC workflow of the repository. The row of the template is for all its scripts together.
 

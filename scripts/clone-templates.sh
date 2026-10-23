@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Clone the TAF template repositories listed in _data/templates.csv, or bring
-# the clones up to date, for working on them alongside the docs.
+# Clone the TAF template repositories listed in
+# docs/_taf/site/boot/initial/data/templates.csv, or bring the clones up to
+# date, for working on them alongside the docs.
 #
-# Usage, from anywhere: docs/_scripts/clone-templates.sh [folder]
+# Usage, from anywhere: scripts/clone-templates.sh [folder]
 #
 # The clones go in folder, by default templates/ at the top of this
 # repository, which is ignored by git, one folder for each repository, named
@@ -15,9 +16,9 @@
 
 set -u
 
-root="$(cd "$(dirname "$0")/../.." && pwd)"
+root="$(cd "$(dirname "$0")/.." && pwd)"
 dest="${1:-$root/templates}"
-csv="$root/docs/_data/templates.csv"
+csv="$root/docs/_taf/site/boot/initial/data/templates.csv"
 
 mkdir -p "$dest" || exit 1
 

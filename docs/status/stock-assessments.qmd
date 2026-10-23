@@ -10,7 +10,7 @@ Each stock is placed by the [TAF readiness level](../system/readiness-level.qmd)
 #| include: false
 source("_plot.R")
 
-stocks <- read.csv("../_generated/stocks.csv")
+stocks <- read.csv("../_taf/site/data/stocks.csv")
 stocks$category <- factor(stocks$category, c("Category 1", "Categories 2-6"))
 
 # from the most to the least advanced, the order the bars are stacked in

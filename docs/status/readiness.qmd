@@ -8,7 +8,7 @@ The [TAF readiness level](../system/readiness-level.qmd) of the stock assessment
 #| include: false
 source("_plot.R")
 
-repos <- read.csv("../_generated/taf-repos.csv")
+repos <- read.csv("../_taf/site/data/taf-repos.csv")
 
 assessments <- readiness_assessments(repos)
 # shared by the chart and the table so that clicking a bar filters the table
@@ -60,7 +60,7 @@ The readiness level of the repositories of four other types of work, by the year
 
 ```{r}
 #| include: false
-other <- read.csv("../_generated/other-repos.csv")
+other <- read.csv("../_taf/site/data/other-repos.csv")
 other$level <- factor(ifelse(is.na(other$trl), 0, other$trl), 0:4, readiness_levels)
 # in the order of the panels
 other$group <- factor(other$group, unique(c("Mixed fisheries advice", "Benchmarks", "Reference points", "Surveys", other$group)))
