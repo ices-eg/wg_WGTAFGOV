@@ -14,3 +14,6 @@ renv.lock
 /templates/
 
 .claude/worktrees/
+
+# drafts of issues to file in other repositories
+_found_issues/
