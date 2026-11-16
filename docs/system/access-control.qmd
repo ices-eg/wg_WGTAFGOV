@@ -53,13 +53,13 @@ Each repository type is identified by one attribute:
 | SC | Stock code |
 | SA | Stock code |
 
-Examples:
+The repositories are in the [ices-taf](https://github.com/ices-taf) organisation, one for each year. Examples from the 2026 RDBES workflow, shown on the [RDBES status page](../status/rdbes.qmd):
 
-| Repository | Attribute |
-|------------|-----------|
-| NE-DK | country = DK |
-| SC-cod.27.347d | stock = cod.27.347d |
-| SA-cod.27.347d | stock = cod.27.347d |
+| Repository type | Repository | Attribute |
+|-----------------|------------|-----------|
+| NE | `2026_all_RDBES_FR` | country = FR |
+| SC | `2026_sol.27.8ab_RDBES_combined` | stock = sol.27.8ab |
+| SA | `2026_sol.27.8ab_assessment` | stock = sol.27.8ab |
 
 ## Write access
 
@@ -67,9 +67,9 @@ Users receive write access through explicit claims.
 
 | Claim type | Claim value | Write access |
 |------------|-------------|--------------|
-| NE | DK | NE repositories with country = DK |
-| SC | cod.27.347d | SC repositories with stock = cod.27.347d |
-| SA | cod.27.347d | SA repositories with stock = cod.27.347d |
+| NE | FR | NE repositories with country = FR |
+| SC | sol.27.8ab | SC repositories with stock = sol.27.8ab |
+| SA | sol.27.8ab | SA repositories with stock = sol.27.8ab |
 
 ### Write access model
 
@@ -108,7 +108,7 @@ ACOM membership is maintained in CRM.
 Each stock is assigned to a Working Group (WG), for example:
 
 ```text
-cod.27.347d → WGNSSK
+sol.27.8ab → WGBIE
 ```
 
 Members of a WG can read:
@@ -138,22 +138,20 @@ Data flow from NE repositories to SC repositories, and from SC repositories to S
 ```{mermaid}
 flowchart LR
 
-DK["NE-DK"] --> SC["SC-cod.27.347d"]
-SE["NE-SE"] --> SC
-NO["NE-NO"] --> SC
-UK["NE-UK"] --> SC
+BE["2026_all_RDBES_BE"] --> SC["2026_sol.27.8ab_RDBES_combined"]
+ES["2026_all_RDBES_ES"] --> SC
+FR["2026_all_RDBES_FR"] --> SC
 
-SC --> SA["SA-cod.27.347d"]
+SC --> SA["2026_sol.27.8ab_assessment"]
 ```
 
 An NE repository can contribute to many SC repositories, one for each stock its country provides data for. Which NE repositories contribute to each SC repository is maintained in a contributor table, for example:
 
 | NE repository | SC repository |
 |---------------|---------------|
-| NE-DK | SC-cod.27.347d |
-| NE-SE | SC-cod.27.347d |
-| NE-NO | SC-cod.27.347d |
-| NE-UK | SC-cod.27.347d |
+| `2026_all_RDBES_BE` | `2026_sol.27.8ab_RDBES_combined` |
+| `2026_all_RDBES_ES` | `2026_sol.27.8ab_RDBES_combined` |
+| `2026_all_RDBES_FR` | `2026_sol.27.8ab_RDBES_combined` |
 
 This connection, from an NE repository to an SC repository, is what gives WG and ADG members read access to NE repositories: a member who can read the SC repository of a stock can also read the NE repositories that contribute to it.
 
