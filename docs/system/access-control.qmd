@@ -221,6 +221,25 @@ CT -->|"NE → SC Contributions"| AUTH
 HR -->|"ICES Staff Membership"| AUTH
 
 AUTH["Authorization Engine"]
+
+%% one colour for each source, its lines and their labels
+classDef rdbes fill:#e0eef8,stroke:#0072b2,color:#0072b2,stroke-width:2px
+classDef sid fill:#fbe6d9,stroke:#b84f00,color:#b84f00,stroke-width:2px
+classDef crm fill:#ddf2ea,stroke:#00785a,color:#00785a,stroke-width:2px
+classDef ct fill:#f6e4ee,stroke:#a3407b,color:#a3407b,stroke-width:2px
+classDef hr fill:#ebe5f5,stroke:#6a4c9c,color:#6a4c9c,stroke-width:2px
+
+class RDBES rdbes
+class SID sid
+class CRM crm
+class CT ct
+class HR hr
+
+linkStyle 0 stroke:#0072b2,color:#0072b2,stroke-width:2px
+linkStyle 1,2,3,4 stroke:#b84f00,color:#b84f00,stroke-width:2px
+linkStyle 5,6,7 stroke:#00785a,color:#00785a,stroke-width:2px
+linkStyle 8 stroke:#a3407b,color:#a3407b,stroke-width:2px
+linkStyle 9 stroke:#6a4c9c,color:#6a4c9c,stroke-width:2px
 ```
 
 ## Authorization evaluation
