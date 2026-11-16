@@ -1,0 +1,284 @@
+---
+title: "Repository access control model"
+order: 8
+---
+
+## Overview
+
+This page describes who can read and write the repositories that hold TAF code, introduced in the [business architecture](business.qmd). There are three types of repository:
+
+- **National Estimation (NE)**: the data of one country, as estimated by its national estimators.
+- **Stock Coordination (SC)**: the data of one stock, as brought together by its stock coordinator.
+- **Stock Assessment (SA)**: the assessment of one stock.
+
+Access rights are derived from a combination of:
+
+- Claims assigned to users
+- Working Group (WG) membership
+- Advice Drafting Group (ADG) membership
+- Advisory Committee (ACOM) membership
+- ICES staff membership
+- Relationships between countries and stocks
+
+The authoritative data sources for these relationships are:
+
+| Information | Source system |
+|-------------|---------------|
+| User → NE country claims | RDBES |
+| User → SC stock claims | SID |
+| User → SA stock claims | SID |
+| Stock → WG mapping | SID |
+| Stock → ADG mapping | SID |
+| User → WG membership | CRM |
+| User → ADG membership | CRM |
+| User → ACOM membership | CRM |
+| Country → stock contributor mapping | Contributor table |
+| ICES staff membership | Identity / HR source |
+
+Where:
+
+- **RDBES** is the ICES Regional Database and Estimation System.
+- **SID** is the ICES Stock Information Database.
+- **CRM** is the ICES contact and membership system, which records who belongs to each group.
+
+## Repository types
+
+Each repository type is identified by one attribute:
+
+| Repository type | Attribute |
+|-----------------|-----------|
+| NE | Country |
+| SC | Stock code |
+| SA | Stock code |
+
+Examples:
+
+| Repository | Attribute |
+|------------|-----------|
+| NE-DK | country = DK |
+| SC-cod.27.347d | stock = cod.27.347d |
+| SA-cod.27.347d | stock = cod.27.347d |
+
+## Write access
+
+Users receive write access through explicit claims.
+
+| Claim type | Claim value | Write access |
+|------------|-------------|--------------|
+| NE | DK | NE repositories with country = DK |
+| SC | cod.27.347d | SC repositories with stock = cod.27.347d |
+| SA | cod.27.347d | SA repositories with stock = cod.27.347d |
+
+### Write access model
+
+```{mermaid}
+flowchart LR
+
+C["Claim
+Type + Value"]
+
+R["Repository
+Type + Attribute"]
+
+C --> M{"Match?"}
+R --> M
+
+M -->|NE & country equal| W1["Write"]
+M -->|SC & stock equal| W2["Write"]
+M -->|SA & stock equal| W3["Write"]
+```
+
+## Read access
+
+Read access is determined from a combination of global permissions, group membership, stock ownership and data contribution relationships.
+
+### Global read access
+
+The following users can read all repositories:
+
+- ICES staff
+- ACOM members
+
+ACOM membership is maintained in CRM.
+
+### Working Groups (WG)
+
+Each stock is assigned to a Working Group (WG), for example:
+
+```text
+cod.27.347d → WGNSSK
+```
+
+Members of a WG can read:
+
+- All SC repositories for stocks assigned to that WG
+- All SA repositories for stocks assigned to that WG
+- All contributing NE repositories associated with those stocks
+
+WG membership is maintained in CRM. Stock-to-WG mappings are maintained in SID.
+
+### Advice Drafting Groups (ADG)
+
+Each stock is also assigned to an Advice Drafting Group (ADG).
+
+Members of an ADG can read:
+
+- All SC repositories for stocks assigned to that ADG
+- All SA repositories for stocks assigned to that ADG
+- All contributing NE repositories associated with those stocks
+
+ADG membership is maintained in CRM. Stock-to-ADG mappings are maintained in SID.
+
+### Contributing countries
+
+Countries contribute data to stocks. This relationship is maintained in a contributor table, for example:
+
+| Country | Stock |
+|---------|-------|
+| DK | cod.27.347d |
+| SE | cod.27.347d |
+| NO | cod.27.347d |
+| UK | cod.27.347d |
+
+If a stock is accessible through WG or ADG membership, the user also receives read access to the NE repositories of the countries contributing to it.
+
+## Business access model
+
+```{mermaid}
+flowchart LR
+
+User --> STAFF["ICES staff"]
+User --> ACOM
+User --> ADG
+User --> WG
+
+STAFF --> ALL["All Repositories"]
+ACOM --> ALL
+
+ADG --> Stock
+WG --> Stock
+
+Stock --> SC["SC Repository"]
+Stock --> SA["SA Repository"]
+
+Country -->|"Contributes Data"| Stock
+Country --> NE["NE Repository"]
+
+ADG -->|"Read"| SC
+ADG -->|"Read"| SA
+ADG -->|"Read Contributing"| NE
+
+WG -->|"Read"| SC
+WG -->|"Read"| SA
+WG -->|"Read Contributing"| NE
+
+User -->|"SC Claim"| SC
+User -->|"SA Claim"| SA
+User -->|"NE Claim"| NE
+```
+
+## Source systems
+
+The systems of record used to determine authorization:
+
+```{mermaid}
+flowchart LR
+
+RDBES["RDBES"]
+SID["SID"]
+CRM["CRM"]
+CT["Contributor Table"]
+HR["Identity / HR Source"]
+
+RDBES -->|"NE Claims
+User ↔ Country"| AUTH
+
+SID -->|"SC Claims
+User ↔ Stock"| AUTH
+SID -->|"SA Claims
+User ↔ Stock"| AUTH
+SID -->|"WG ↔ Stock"| AUTH
+SID -->|"ADG ↔ Stock"| AUTH
+
+CRM -->|"User ↔ WG"| AUTH
+CRM -->|"User ↔ ADG"| AUTH
+CRM -->|"ACOM Membership"| AUTH
+
+CT -->|"Country ↔ Stock"| AUTH
+HR -->|"ICES Staff Membership"| AUTH
+
+AUTH["Authorization Engine"]
+```
+
+## Authorization evaluation
+
+How access to a repository is evaluated. Write claims are checked first, so that ICES staff and ACOM members who also hold a claim get write access, not only read access.
+
+```{mermaid}
+flowchart TD
+
+A["User Requests Repository"]
+
+A --> C{"Write Claim Match?"}
+
+C -->|NE=Country| WRITE["Write Allowed"]
+C -->|SC=Stock| WRITE
+C -->|SA=Stock| WRITE
+
+C -->|No Match| B{"ICES Staff or ACOM?"}
+
+B -->|Yes| READ["Read Allowed"]
+
+B -->|No| D{"WG or ADG Member?"}
+
+D -->|No| DENY["Access Denied"]
+
+D -->|Yes| E{"Repository Type?"}
+
+E -->|"SC or SA, stock owned by WG/ADG"| READ
+E -->|"NE, country contributes to owned stock"| READ
+E -->|Otherwise| DENY
+```
+
+## Access rules summary
+
+| Source | Access |
+|--------|--------|
+| ICES staff | Read all repositories |
+| ACOM member | Read all repositories |
+| ADG member | Read SC repositories for ADG stocks |
+| ADG member | Read SA repositories for ADG stocks |
+| ADG member | Read NE repositories for countries contributing to ADG stocks |
+| WG member | Read SC repositories for WG stocks |
+| WG member | Read SA repositories for WG stocks |
+| WG member | Read NE repositories for countries contributing to WG stocks |
+| NE claim | Write matching NE repositories |
+| SC claim | Write matching SC repositories |
+| SA claim | Write matching SA repositories |
+
+## Data relationships
+
+The authorization model depends on the following maintained relationships:
+
+```text
+User
+ ├─ NE Claim (RDBES)
+ ├─ SC Claim (SID)
+ ├─ SA Claim (SID)
+ ├─ WG Membership (CRM)
+ ├─ ADG Membership (CRM)
+ ├─ ACOM Membership (CRM)
+ └─ ICES Staff Membership (Identity / HR Source)
+
+WG ──────────────► Stock          (SID)
+
+ADG ─────────────► Stock          (SID)
+
+Country ─────────► Stock          (Contributor Table)
+
+Stock ───────────► SC Repository
+
+Stock ───────────► SA Repository
+
+Country ─────────► NE Repository
+```
