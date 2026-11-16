@@ -39,6 +39,7 @@ website:
         - system/tafxplorer.qmd
         - system/readiness-level.qmd
         - system/components.qmd
+        - system/access-control.qmd
     - title: Planning
       contents:
         - planning/index.qmd
