@@ -11,6 +11,8 @@ This page describes who can read and write the repositories that hold TAF code, 
 - **Stock Coordination (SC)**: the data of one stock, as brought together by its stock coordinator.
 - **Stock Assessment (SA)**: the assessment of one stock.
 
+The repositories form a tree: the NE repositories of the countries that contribute data to a stock feed its SC repository, which in turn feeds its SA repository (see [Data flow between repositories](#data-flow-between-repositories)).
+
 Access rights are derived from a combination of:
 
 - Claims assigned to users
@@ -18,7 +20,7 @@ Access rights are derived from a combination of:
 - Advice Drafting Group (ADG) membership
 - Advisory Committee (ACOM) membership
 - ICES staff membership
-- Relationships between countries and stocks
+- The NE repositories that contribute data to each SC repository
 
 The authoritative data sources for these relationships are:
 
@@ -32,7 +34,7 @@ The authoritative data sources for these relationships are:
 | User → WG membership | CRM |
 | User → ADG membership | CRM |
 | User → ACOM membership | CRM |
-| Country → stock contributor mapping | Contributor table |
+| NE repository → SC repository contributions | Contributor table |
 | ICES staff membership | Identity / HR source |
 
 Where:
@@ -90,7 +92,7 @@ M -->|SA & stock equal| W3["Write"]
 
 ## Read access
 
-Read access is determined from a combination of global permissions, group membership, stock ownership and data contribution relationships.
+Read access is determined from a combination of global permissions, group membership, stock ownership and the flow of data between repositories.
 
 ### Global read access
 
@@ -113,7 +115,7 @@ Members of a WG can read:
 
 - All SC repositories for stocks assigned to that WG
 - All SA repositories for stocks assigned to that WG
-- All contributing NE repositories associated with those stocks
+- All NE repositories that contribute data to those SC repositories
 
 WG membership is maintained in CRM. Stock-to-WG mappings are maintained in SID.
 
@@ -125,22 +127,35 @@ Members of an ADG can read:
 
 - All SC repositories for stocks assigned to that ADG
 - All SA repositories for stocks assigned to that ADG
-- All contributing NE repositories associated with those stocks
+- All NE repositories that contribute data to those SC repositories
 
 ADG membership is maintained in CRM. Stock-to-ADG mappings are maintained in SID.
 
-### Contributing countries
+### Data flow between repositories
 
-Countries contribute data to stocks. This relationship is maintained in a contributor table, for example:
+Data flow from NE repositories to SC repositories, and from SC repositories to SA repositories. Each NE repository contributes the data of one country to the SC repositories of the stocks that country contributes to, and each SC repository feeds the SA repository of its stock:
 
-| Country | Stock |
-|---------|-------|
-| DK | cod.27.347d |
-| SE | cod.27.347d |
-| NO | cod.27.347d |
-| UK | cod.27.347d |
+```{mermaid}
+flowchart LR
 
-If a stock is accessible through WG or ADG membership, the user also receives read access to the NE repositories of the countries contributing to it.
+DK["NE-DK"] --> SC["SC-cod.27.347d"]
+SE["NE-SE"] --> SC
+NO["NE-NO"] --> SC
+UK["NE-UK"] --> SC
+
+SC --> SA["SA-cod.27.347d"]
+```
+
+An NE repository can contribute to many SC repositories, one for each stock its country provides data for. Which NE repositories contribute to each SC repository is maintained in a contributor table, for example:
+
+| NE repository | SC repository |
+|---------------|---------------|
+| NE-DK | SC-cod.27.347d |
+| NE-SE | SC-cod.27.347d |
+| NE-NO | SC-cod.27.347d |
+| NE-UK | SC-cod.27.347d |
+
+This connection, from an NE repository to an SC repository, is what gives WG and ADG members read access to NE repositories: a member who can read the SC repository of a stock can also read the NE repositories that contribute to it.
 
 ## Business access model
 
@@ -161,8 +176,8 @@ WG --> Stock
 Stock --> SC["SC Repository"]
 Stock --> SA["SA Repository"]
 
-Country -->|"Contributes Data"| Stock
-Country --> NE["NE Repository"]
+NE["NE Repository"] -->|"Contributes Data"| SC
+SC -->|"Feeds"| SA
 
 ADG -->|"Read"| SC
 ADG -->|"Read"| SA
@@ -204,7 +219,7 @@ CRM -->|"User ↔ WG"| AUTH
 CRM -->|"User ↔ ADG"| AUTH
 CRM -->|"ACOM Membership"| AUTH
 
-CT -->|"Country ↔ Stock"| AUTH
+CT -->|"NE → SC Contributions"| AUTH
 HR -->|"ICES Staff Membership"| AUTH
 
 AUTH["Authorization Engine"]
@@ -236,7 +251,7 @@ D -->|No| DENY["Access Denied"]
 D -->|Yes| E{"Repository Type?"}
 
 E -->|"SC or SA, stock owned by WG/ADG"| READ
-E -->|"NE, country contributes to owned stock"| READ
+E -->|"NE, contributes to SC of owned stock"| READ
 E -->|Otherwise| DENY
 ```
 
@@ -248,10 +263,10 @@ E -->|Otherwise| DENY
 | ACOM member | Read all repositories |
 | ADG member | Read SC repositories for ADG stocks |
 | ADG member | Read SA repositories for ADG stocks |
-| ADG member | Read NE repositories for countries contributing to ADG stocks |
+| ADG member | Read NE repositories contributing to the SC repositories of ADG stocks |
 | WG member | Read SC repositories for WG stocks |
 | WG member | Read SA repositories for WG stocks |
-| WG member | Read NE repositories for countries contributing to WG stocks |
+| WG member | Read NE repositories contributing to the SC repositories of WG stocks |
 | NE claim | Write matching NE repositories |
 | SC claim | Write matching SC repositories |
 | SA claim | Write matching SA repositories |
@@ -274,11 +289,11 @@ WG ──────────────► Stock          (SID)
 
 ADG ─────────────► Stock          (SID)
 
-Country ─────────► Stock          (Contributor Table)
-
 Stock ───────────► SC Repository
 
 Stock ───────────► SA Repository
 
-Country ─────────► NE Repository
+NE Repository ───► SC Repository  (Contributor Table)
+
+SC Repository ───► SA Repository
 ```
