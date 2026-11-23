@@ -103,8 +103,9 @@ The status of the **repositories** follows the [TAF readiness level](../system/r
 
 The **connections** are found in the code of the repositories, which is read from GitHub each night:
 
-- A repository **downloads** from the RDBES when its `boot/DATA.bib` has an entry with `source = {script}` whose script, `boot/<entry>.R`, calls `icesRDBES::rdbes_download_data()`.
+- A repository **downloads** from the RDBES when the script of an entry of its `boot/DATA.bib` with `source = {script}`, `boot/<entry>.R`, or its `data.R`, or a script they `source()`, calls `icesRDBES::rdbes_download_data()`. The TAF way is to download in `boot`, but many repositories download in `data.R`, so both are counted.
 - A repository **uploads** to the RDBES when its `output.R` or `report.R`, or a script they `source()`, calls `icesRDBES::rdbes_upload_data()`. Upload code in a script that `output.R` and `report.R` do not source is not counted, because it is not part of the TAF run.
+- A script counts as sourced when it is named in a `source()` call, or in a list of scripts that a loop sources. Paths written for Windows, with `\` or in a different letter case, are matched too.
 - A repository can hold several TAF projects in folders, such as one for each expert group. Each project, with its own `boot/DATA.bib`, `output.R` and `report.R`, is looked at.
 - Calls in comments are not counted. A repository that calls `icesRDBES::use_sboxrdbes()` uses the RDBES sandbox, which is shown in the table above.
 
