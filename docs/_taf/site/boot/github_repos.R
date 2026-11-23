@@ -233,23 +233,60 @@ calls <- function(text, fun) {
 
 # the connections of a repository to the RDBES, found in its code. The paths
 # are those of its files: a repository can hold several TAF projects in
-# folders, as by expert group, each with its own boot/DATA.bib, output.R and
-# report.R.
+# folders, as by expert group, each with its own boot/DATA.bib, data.R,
+# output.R and report.R.
 #
-# - download: the scripts of the data in boot/DATA.bib with source = {script}
-#   that call icesRDBES::rdbes_download_data()
+# - download: the scripts of the data in boot/DATA.bib with source = {script},
+#   and data.R, or the scripts any of these source, that call
+#   icesRDBES::rdbes_download_data()
 # - upload: output.R and report.R, or the scripts they source, that call
 #   icesRDBES::rdbes_upload_data()
 # - sandbox: any of these that call icesRDBES::use_sboxrdbes(), so that they
 #   download from or upload to the RDBES sandbox
+#
+# A script is taken as sourced when it is named in a source() call, or, in a
+# script that calls source(), in a string such as a list of scripts sourced in
+# a loop. Paths are matched with / for \\ and whatever the case, as they are
+# written for Windows. Comments are left out.
 rdbes_ports <- function(repo, paths) {
   found <- list(download = character(), upload = character(), sandbox = FALSE)
+  texts <- list()
   read <- function(path) {
-    text <- gh_file(repo, path)
-    if (calls(text, "use_sboxrdbes")) found$sandbox <<- TRUE
-    text
+    if (is.null(texts[[path]])) {
+      text <- gh_file(repo, path)
+      if (calls(text, "use_sboxrdbes")) found$sandbox <<- TRUE
+      texts[[path]] <<- if (is.null(text)) character() else text
+    }
+    texts[[path]]
   }
 
+  # the scripts that are run from the given scripts, a few levels down, each
+  # in the folder of the TAF project it starts from, which is where it runs
+  run_from <- function(start) {
+    todo <- start
+    bases <- setNames(sub("(^|/)boot/[^/]*$|[^/]*$", "\\1", start), start)
+    seen <- character()
+    while (length(todo) && length(seen) < 50) {
+      path <- todo[1]
+      todo <- todo[-1]
+      if (path %in% seen) next
+      seen <- c(seen, path)
+      code <- sub("#.*$", "", read(path))
+      named <- if (any(grepl("\\bsource\\s*\\(", code))) {
+        unlist(regmatches(code, gregexpr("[\"'][^\"']+[.][Rr]\\s*[\"']", code)))
+      }
+      if (!length(named)) next
+      named <- trimws(gsub("[\"']", "", named))
+      named <- sub("^[.]/", "", gsub("\\\\+", "/", paste0(bases[[path]], named)))
+      named <- paths[match(tolower(named), tolower(paths))]
+      named <- named[!is.na(named) & !named %in% seen]
+      bases[named] <- bases[[path]]
+      todo <- c(todo, named)
+    }
+    seen
+  }
+
+  boot <- character()
   for (bib in paths[grepl("(^|/)boot/DATA[.]bib$", paths)]) {
     base <- sub("boot/DATA[.]bib$", "", bib)
     entries <- strsplit(paste(read(bib), collapse = "\n"), "@")[[1]]
@@ -257,30 +294,15 @@ rdbes_ports <- function(repo, paths) {
       key <- regmatches(entry, regexec("^\\w+\\s*\\{\\s*([^,\\s]+)\\s*,", entry))[[1]][2]
       source <- regmatches(entry, regexec("source\\s*=\\s*\\{\\s*([^}]*?)\\s*\\}", entry))[[1]][2]
       script <- paste0(base, "boot/", key, ".R")
-      if (!is.na(key) && source %in% "script" && script %in% paths && calls(read(script), "rdbes_download_data")) {
-        found$download <- c(found$download, script)
-      }
+      if (!is.na(key) && source %in% "script" && script %in% paths) boot <- c(boot, script)
     }
   }
 
-  # output.R and report.R, and the scripts they source, a few levels down
-  todo <- paths[grepl("(^|/)(output|report)[.]R$", paths)]
-  bases <- setNames(sub("[^/]*$", "", todo), todo)
-  seen <- character()
-  while (length(todo) && length(seen) < 50) {
-    path <- todo[1]
-    todo <- todo[-1]
-    if (path %in% seen) next
-    seen <- c(seen, path)
-    text <- read(path)
-    if (calls(text, "rdbes_upload_data")) found$upload <- c(found$upload, path)
-    # sourced from the folder of the TAF project, which is where it runs
-    sourced <- regmatches(text, regexpr("source\\(\\s*[\"'][^\"']+[\"']", text))
-    sourced <- sub("^source\\(\\s*[\"']", "", sub("[\"']$", "", sourced))
-    sourced <- sub("^[.]/", "", paste0(bases[[path]], sourced))
-    sourced <- sourced[sourced %in% paths & !sourced %in% seen]
-    bases[sourced] <- bases[[path]]
-    todo <- c(todo, sourced)
+  for (path in run_from(c(boot, paths[grepl("(^|/)data[.]R$", paths)]))) {
+    if (calls(read(path), "rdbes_download_data")) found$download <- c(found$download, path)
+  }
+  for (path in run_from(paths[grepl("(^|/)(output|report)[.]R$", paths)])) {
+    if (calls(read(path), "rdbes_upload_data")) found$upload <- c(found$upload, path)
   }
   found
 }
